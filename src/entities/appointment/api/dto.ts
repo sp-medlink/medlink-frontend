@@ -25,3 +25,19 @@ export interface AppointmentsHistoryApiResponse {
 export interface AppointmentApiResponse {
   appointment: AppointmentApiDto;
 }
+
+export interface CreateAppointmentApiBody {
+  doctor_department_id: string;
+  date: string;
+  time: string;
+  is_online: boolean;
+}
+
+export interface CreateAppointmentApiResponse {
+  appointment_id: string;
+}
+
+export interface VideoCallTokenApiResponse {
+  token: string;
+  url: string;
+}

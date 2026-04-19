@@ -1,5 +1,8 @@
-import { PatientDoctorsView } from "@/features/patient-doctors/ui/patient-doctors-view";
+import { redirect } from "next/navigation";
 
-export default function PatientDoctorsPage() {
-  return <PatientDoctorsView />;
+import { routes } from "@/shared/config";
+
+/** Legacy URL — redirect to the organization directory. */
+export default function PatientDoctorsRedirectPage() {
+  redirect(routes.patient.organisations);
 }

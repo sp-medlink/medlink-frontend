@@ -1,3 +1,16 @@
+/** Directory: departments of the selected organization */
+export function patientOrganisationPath(organizationId: string): string {
+  return `/patient/organisations/${organizationId}`;
+}
+
+/** Directory: doctors in a department */
+export function patientOrganisationDepartmentPath(
+  organizationId: string,
+  departmentId: string,
+): string {
+  return `/patient/organisations/${organizationId}/departments/${departmentId}`;
+}
+
 export const routes = {
   login: "/login",
   signup: "/signup",
@@ -5,8 +18,8 @@ export const routes = {
   settings: "/settings",
   patient: {
     root: "/patient",
-    /** Search doctors by specialty, location (report §3.B.1) */
-    doctors: "/patient/doctors",
+    /** Catalog: organizations (search by name) */
+    organisations: "/patient/organisations",
     appointments: "/patient/appointments",
     /** Telehealth / video visits */
     consultations: "/patient/consultations",

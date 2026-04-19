@@ -7,6 +7,8 @@ export const doctorChatKeys = {
   doctors: (orgId: string, deptId: string) =>
     [...doctorChatKeys.all(), "doctors", orgId, deptId] as const,
   myChats: () => [...doctorChatKeys.all(), "my-chats"] as const,
+  /** Merged patient/doctor inbox (role encoded in cache entry via queryFn). */
+  inbox: (role: string) => [...doctorChatKeys.all(), "inbox", role] as const,
   resolvedChat: (doctorDeptId: string) =>
     [...doctorChatKeys.all(), "resolved-chat", doctorDeptId] as const,
   messages: (chatId: string) =>

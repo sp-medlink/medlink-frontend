@@ -45,6 +45,9 @@ export function PrivateAppShell({ children }: PrivateAppShellProps) {
   const setSidebarOpen = useShellUiStore((s) => s.setSidebarOpen);
   const chatOpen = useDoctorChatUiStore((s) => s.isOpen);
   const chatPanelWidthPx = useDoctorChatUiStore((s) => s.panelWidthPx);
+  const isChatsFullPageRoute =
+    pathname.startsWith("/patient/chats") ||
+    pathname.startsWith("/doctor/chats");
 
   useEffect(() => {
     if (areaFromPath) lastAreaRef.current = areaFromPath;
@@ -76,10 +79,12 @@ export function PrivateAppShell({ children }: PrivateAppShellProps) {
       />
       <div
         className={cn(
-          "min-h-screen min-w-0 flex-1 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "flex min-h-0 min-w-0 flex-1 flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         )}
         style={
-          chatOpen ? { paddingRight: chatPanelWidthPx } : undefined
+          chatOpen && !isChatsFullPageRoute
+            ? { paddingRight: chatPanelWidthPx }
+            : undefined
         }
       >
         {children}

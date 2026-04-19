@@ -114,3 +114,53 @@ export interface SendChatMessageBody {
 export interface SendChatMessageResponse {
   message: ChatMessageDto;
 }
+
+/** `GET /user/doctor/departments/{doc_dept_id}/chats` — doctor inbox. */
+export interface DoctorChatListItemDto {
+  id: string;
+  patient_user_id: string;
+  patient_avatar_path: string;
+  patient_first_name: string;
+  patient_last_name: string;
+  doctor_department_id: string;
+  last_message_created_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GetManyDoctorChatsResponse {
+  chats: DoctorChatListItemDto[];
+}
+
+/** `GET /user/doctor/departments` */
+export interface DoctorOwnDepartmentDto {
+  id: string;
+  doctor_id: string;
+  department_id: string;
+  department_name: string;
+  organization_id: string;
+  organization_name: string;
+  position: string;
+  description: string;
+  appt_duration_in_minutes: number;
+  is_dept_admin: boolean;
+  rating: number;
+  is_enabled: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GetManyDoctorOwnDepartmentsResponse {
+  doctors_departments: DoctorOwnDepartmentDto[];
+}
+
+/** Normalized row for the app chat inbox (patient or doctor). */
+export interface UnifiedInboxRow {
+  kind: "patient" | "doctor";
+  chatId: string;
+  doctorDepartmentId: string;
+  peerDisplayName: string;
+  peerAvatarPath: string | null;
+  lastMessageCreatedAt: string;
+}

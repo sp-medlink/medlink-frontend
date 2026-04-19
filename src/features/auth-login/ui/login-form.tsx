@@ -30,9 +30,8 @@ export function LoginForm() {
     try {
       const user = await mutation.mutateAsync(values);
       toast.success(`Welcome back, ${user.firstName}`);
-      // Bounce through `/` — `useLandingRoute` there picks the right
-      // destination once admin-capability probes settle. Doing this locally
-      // would race the probes and momentarily send org-admins to /patient.
+      // Land on `/` so admin-capability probes can finish; the home page
+      // shows the role-specific overview there (no redirect to /patient).
       router.replace("/");
     } catch (err) {
       const message = err instanceof ApiError ? (err.reason ?? err.message) : "Login failed";

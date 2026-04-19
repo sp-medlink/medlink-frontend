@@ -21,6 +21,9 @@ export interface DoctorDepartment {
   id: string;
   doctorId: string;
   departmentId: string;
+  departmentName: string;
+  organizationId: string;
+  organizationName: string;
   position: string;
   description: string;
   apptDurationInMinutes: number;

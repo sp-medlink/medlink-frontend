@@ -24,25 +24,33 @@ import {
   GripVertical,
   Loader2,
   MessageCircle,
+  Trash2,
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
+import { enUS } from "date-fns/locale";
 import { toast } from "sonner";
 
-import type { ChatDto } from "../api/types";
+import { fetchChatMessages } from "../api/chat-api";
+import { doctorChatKeys } from "../api/query-keys";
 import type { ChatLine } from "../model/chat-ui-store";
+import { useChatRoomWebSocket } from "../model/use-chat-websocket";
 import {
   hydrateChatPanelWidthFromStorage,
   useDoctorChatUiStore,
 } from "../model/chat-ui-store";
 import {
+  CHAT_MESSAGES_STALE_MS,
   useChatMessagesQuery,
-  useMyChatsQuery,
+  useDeleteChatMutation,
   useSendChatMessageMutation,
+  useUnifiedInboxQuery,
 } from "../model/use-doctor-chat-queries";
 
 import {
+  useAppRole,
   useCurrentUser,
   useIsAuthenticated,
   useIsSessionHydrated,
@@ -50,6 +58,8 @@ import {
 import { ApiError } from "@/shared/api";
 import { env, routes } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
+
+import { PatientChatStartWizard } from "./patient-chat-start-wizard";
 
 /** Min / max height (px) — single line centered with send; then grows. */
 const CHAT_INPUT_MIN_H = 40;
@@ -177,11 +187,6 @@ function resolveAvatarUrl(path: string | null | undefined): string | null {
   return p;
 }
 
-function chatDoctorDisplayName(c: ChatDto): string {
-  const n = `Dr. ${c.doctor_first_name} ${c.doctor_last_name}`.trim();
-  return n || "Doctor";
-}
-
 function initials(name: string): string {
   const parts = name.replace(/^Dr\.\s*/i, "").trim().split(/\s+/);
   const a = parts[0]?.[0] ?? "";
@@ -194,15 +199,15 @@ function startOfLocalDay(ts: number): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
-/** Разделитель в ленте: «Сегодня», «Вчера» или «8 апреля» (RU). */
+/** Thread separator: "Today", "Yesterday", or a localized date (e.g. "April 8"). */
 function formatChatDateLabel(ts: number, nowMs: number): string {
   const dayStart = startOfLocalDay(ts);
   const todayStart = startOfLocalDay(nowMs);
-  if (dayStart === todayStart) return "Сегодня";
-  if (dayStart === todayStart - 86400000) return "Вчера";
+  if (dayStart === todayStart) return "Today";
+  if (dayStart === todayStart - 86400000) return "Yesterday";
   const msgYear = new Date(ts).getFullYear();
   const currentYear = new Date(nowMs).getFullYear();
-  return new Date(ts).toLocaleDateString("ru-RU", {
+  return new Date(ts).toLocaleDateString("en-US", {
     day: "numeric",
     month: "long",
     ...(msgYear !== currentYear ? { year: "numeric" as const } : {}),
@@ -227,20 +232,13 @@ function formatMyChatsError(err: unknown): string {
   return "Could not load conversations.";
 }
 
-function NoChatsSidebarCard({ onNavigate }: { onNavigate: () => void }) {
+function NoChatsDoctorCard() {
   return (
     <li className="flex flex-col items-center gap-3 px-3 py-10 text-center">
-      <p className="text-sm font-medium text-neutral-200">Нет чатов</p>
+      <p className="text-sm font-medium text-neutral-200">No chats</p>
       <p className="max-w-[16rem] text-xs leading-relaxed text-neutral-500">
-        Перейдите к списку врачей, чтобы выбрать специалиста и начать переписку.
+        When patients message you, conversations will appear here.
       </p>
-      <Link
-        href={routes.patient.doctors}
-        className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:outline-none"
-        onClick={onNavigate}
-      >
-        К списку врачей
-      </Link>
     </li>
   );
 }
@@ -328,7 +326,13 @@ function DoctorAvatar({
   );
 }
 
-export function DoctorChatWidget() {
+export type DoctorChatWidgetVariant = "dock" | "page";
+
+export function DoctorChatWidget({
+  variant = "dock",
+}: {
+  variant?: DoctorChatWidgetVariant;
+} = {}) {
   const isOpen = useDoctorChatUiStore((s) => s.isOpen);
   const view = useDoctorChatUiStore((s) => s.view);
   const selectedChatId = useDoctorChatUiStore((s) => s.selectedChatId);
@@ -339,41 +343,55 @@ export function DoctorChatWidget() {
   const panelWidthPx = useDoctorChatUiStore((s) => s.panelWidthPx);
   const setPanelWidthPx = useDoctorChatUiStore((s) => s.setPanelWidthPx);
 
+  const queryClient = useQueryClient();
   const hydrated = useIsSessionHydrated();
   const isAuthenticated = useIsAuthenticated();
   const currentUser = useCurrentUser();
+  const appRole = useAppRole();
+  const chatRole =
+    appRole === "doctor" || appRole === "patient" ? appRole : null;
 
-  const myChatsQuery = useMyChatsQuery(
-    Boolean(isOpen && hydrated && isAuthenticated),
+  const isPage = variant === "page";
+  const surfaceOpen = isPage || isOpen;
+
+  const inboxQuery = useUnifiedInboxQuery(
+    Boolean(surfaceOpen && hydrated && isAuthenticated && chatRole),
   );
 
-  const conversations = useMemo(() => {
-    const raw = myChatsQuery.data?.chats ?? [];
-    return [...raw].sort(
-      (a, b) =>
-        new Date(b.last_message_created_at).getTime() -
-        new Date(a.last_message_created_at).getTime(),
-    );
-  }, [myChatsQuery.data]);
+  const inboxRows = useMemo(() => inboxQuery.data ?? [], [inboxQuery.data]);
+
+  const inboxListLoading =
+    hydrated &&
+    isAuthenticated &&
+    inboxQuery.isPending &&
+    inboxQuery.data === undefined;
 
   const showNoChatsCard =
-    !myChatsQuery.isPending &&
-    !myChatsQuery.isError &&
-    conversations.length === 0;
+    !inboxQuery.isPending &&
+    !inboxQuery.isError &&
+    inboxRows.length === 0;
 
   const selectedConversation = useMemo(
-    () => conversations.find((c) => c.id === selectedChatId) ?? null,
-    [conversations, selectedChatId],
+    () => inboxRows.find((c) => c.chatId === selectedChatId) ?? null,
+    [inboxRows, selectedChatId],
   );
 
   const chatId = selectedChatId;
 
   const messagesQuery = useChatMessagesQuery(
     chatId,
-    Boolean(isOpen && view === "chat" && chatId),
+    Boolean(surfaceOpen && view === "chat" && chatId),
+  );
+
+  useChatRoomWebSocket(
+    chatId,
+    Boolean(
+      surfaceOpen && view === "chat" && chatId && hydrated && isAuthenticated,
+    ),
   );
 
   const sendMutation = useSendChatMessageMutation(chatId);
+  const deleteChatMutation = useDeleteChatMutation();
 
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -408,23 +426,23 @@ export function DoctorChatWidget() {
   }, [messagesQuery.data, currentUser?.id]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isPage) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, close]);
+  }, [isOpen, isPage, close]);
 
   useEffect(() => {
-    if (!isOpen || view !== "chat") return;
+    if (!surfaceOpen || view !== "chat") return;
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [isOpen, view, lines.length]);
+  }, [surfaceOpen, view, lines.length]);
 
   useLayoutEffect(() => {
-    if (!isOpen || view !== "chat") return;
+    if (!surfaceOpen || view !== "chat") return;
     adjustTextareaHeight();
-  }, [draft, isOpen, view, adjustTextareaHeight]);
+  }, [draft, surfaceOpen, view, adjustTextareaHeight]);
 
   const send = useCallback(async () => {
     const text = draft.trim();
@@ -498,78 +516,60 @@ export function DoctorChatWidget() {
   const reduceMotion = useReducedMotion();
   const presets = buildMotionPresets(reduceMotion);
 
-  const ui = (
-    <>
-      <AnimatePresence mode="sync">
-        {!isOpen ? (
-          <motion.button
-            key="doctor-chat-fab"
-            type="button"
-            onClick={open}
-            variants={presets.fabVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className={cn(
-              "fixed right-6 bottom-6 z-120 inline-flex origin-bottom-right items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium text-neutral-100 shadow-2xl backdrop-blur-md hover:brightness-110 focus-visible:ring-2 focus-visible:ring-emerald-400/30 focus-visible:outline-none",
-              "border-neutral-700 bg-neutral-950/95 ring-1 ring-neutral-600/50",
-            )}
-            aria-expanded={false}
-            aria-haspopup="dialog"
-            style={{ willChange: "transform, opacity" }}
-          >
-            <MessageCircle
-              className="size-5 shrink-0 text-emerald-400/90"
-              strokeWidth={2}
-              aria-hidden
-            />
-            chat
-          </motion.button>
-        ) : null}
-      </AnimatePresence>
+  const onDeleteChat = useCallback(async () => {
+    if (!selectedConversation || !chatId) return;
+    if (
+      !window.confirm(
+        "Delete this chat? The history will be removed for you.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await deleteChatMutation.mutateAsync({
+        chatId,
+        doctorDepartmentId: selectedConversation.doctorDepartmentId,
+      });
+      showChatList();
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : "Could not delete chat.";
+      toast.error(msg);
+    }
+  }, [
+    chatId,
+    deleteChatMutation,
+    selectedConversation,
+    showChatList,
+  ]);
 
-      <AnimatePresence mode="sync">
-        {isOpen ? (
-          <>
-            <motion.section
-              key="doctor-chat-panel"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Chats"
-              variants={presets.panelVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className={cn(
-                "fixed inset-y-0 right-0 z-110 flex h-dvh min-h-0 max-w-[100vw] flex-col overflow-hidden border-l",
-                "border-neutral-800 bg-neutral-950 text-neutral-100 backdrop-blur-xl",
-              )}
-              style={{
-                width: panelWidthPx,
-                transformOrigin: "100% 50%",
-                willChange: "transform, opacity",
-              }}
-            >
-              <div
-                role="separator"
-                aria-orientation="vertical"
-                aria-label="Изменить ширину чата"
-                onPointerDown={onPanelResizePointerDown}
-                onPointerMove={onPanelResizePointerMove}
-                onPointerUp={onPanelResizePointerUp}
-                onPointerCancel={onPanelResizePointerUp}
-                className="absolute top-0 bottom-0 left-0 z-10 flex w-4 -translate-x-1/2 cursor-ew-resize touch-none select-none items-center justify-center hover:bg-emerald-500/10 active:bg-emerald-500/20"
-              >
-                <span
-                  className="pointer-events-none flex items-center justify-center rounded-full border border-neutral-600/90 bg-neutral-900/95 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.35)] ring-1 ring-white/5"
-                  aria-hidden
+  function renderChatPanelBody() {
+    return (
+      <>
+              {!isPage ? (
+                <div
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Resize chat panel"
+                  onPointerDown={onPanelResizePointerDown}
+                  onPointerMove={onPanelResizePointerMove}
+                  onPointerUp={onPanelResizePointerUp}
+                  onPointerCancel={onPanelResizePointerUp}
+                  className="absolute top-0 bottom-0 left-0 z-10 flex w-4 -translate-x-1/2 cursor-ew-resize touch-none select-none items-center justify-center hover:bg-emerald-500/10 active:bg-emerald-500/20"
                 >
-                  <GripVertical
-                    className="size-5 text-neutral-400"
-                    strokeWidth={2}
-                  />
-                </span>
-              </div>
+                  <span
+                    className="pointer-events-none flex items-center justify-center rounded-full border border-neutral-600/90 bg-neutral-900/95 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.35)] ring-1 ring-white/5"
+                    aria-hidden
+                  >
+                    <GripVertical
+                      className="size-5 text-neutral-400"
+                      strokeWidth={2}
+                    />
+                  </span>
+                </div>
+              ) : null}
             {view === "list" ? (
               <>
                 <header className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-800 bg-neutral-950 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
@@ -579,27 +579,30 @@ export function DoctorChatWidget() {
                     </p>
                     <p className="text-xs text-neutral-500">
                       {isAuthenticated
-                        ? `${conversations.length} ${conversations.length === 1 ? "conversation" : "conversations"} · Messages are saved on the server`
-                        : "Sign in to message your care team"}
+                        ? `${inboxRows.length} ${inboxRows.length === 1 ? "conversation" : "conversations"} · Messages on server`
+                        : "Sign in to send messages"}
                     </p>
-                    {isAuthenticated ? (
+                    {isAuthenticated &&
+                    !(showNoChatsCard && chatRole === "patient") ? (
                       <Link
-                        href={routes.patient.doctors}
+                        href={routes.patient.organisations}
                         className="mt-1 inline-block text-xs font-medium text-emerald-400/90 underline-offset-2 hover:underline"
                         onClick={close}
                       >
-                        Find doctors
+                        Organizations
                       </Link>
                     ) : null}
                   </div>
-                  <button
-                    type="button"
-                    onClick={close}
-                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:outline-none"
-                    aria-label="Close"
-                  >
-                    <X className="size-4" aria-hidden />
-                  </button>
+                  {!isPage ? (
+                    <button
+                      type="button"
+                      onClick={close}
+                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:outline-none"
+                      aria-label="Close"
+                    >
+                      <X className="size-4" aria-hidden />
+                    </button>
+                  ) : null}
                 </header>
 
                 <motion.ul
@@ -609,9 +612,21 @@ export function DoctorChatWidget() {
                   animate="visible"
                 >
                   {!hydrated ? (
-                    <li className="flex justify-center py-8 text-sm text-neutral-500">
-                      <Loader2 className="size-6 animate-spin text-neutral-400" aria-hidden />
-                    </li>
+                    <>
+                      {[1, 2, 3].map((i) => (
+                        <li
+                          key={i}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                          aria-hidden
+                        >
+                          <div className="size-11 shrink-0 animate-pulse rounded-full bg-neutral-800" />
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="h-4 w-[58%] max-w-56 animate-pulse rounded bg-neutral-800" />
+                            <div className="h-3 w-[36%] max-w-36 animate-pulse rounded bg-neutral-800" />
+                          </div>
+                        </li>
+                      ))}
+                    </>
                   ) : !isAuthenticated ? (
                     <li className="rounded-xl border border-neutral-800 bg-neutral-900/40 px-3 py-4 text-center text-sm text-neutral-400">
                       <Link
@@ -623,29 +638,41 @@ export function DoctorChatWidget() {
                       </Link>{" "}
                       to open chats with doctors.
                     </li>
-                  ) : myChatsQuery.isPending ? (
+                  ) : inboxListLoading ? (
                     <li className="flex justify-center py-8">
                       <Loader2 className="size-6 animate-spin text-neutral-400" aria-hidden />
                     </li>
-                  ) : myChatsQuery.isError ? (
+                  ) : inboxQuery.isError ? (
                     <li className="rounded-xl border border-red-900/50 bg-red-950/20 px-3 py-3 text-sm text-red-200/90">
-                      {formatMyChatsError(myChatsQuery.error)}
+                      {formatMyChatsError(inboxQuery.error)}
                     </li>
                   ) : showNoChatsCard ? (
-                    <NoChatsSidebarCard onNavigate={close} />
+                    chatRole === "patient" ? (
+                      <PatientChatStartWizard chatSurfaceActive={surfaceOpen} />
+                    ) : (
+                      <NoChatsDoctorCard />
+                    )
                   ) : (
-                    conversations.map((c) => {
-                      const name = chatDoctorDisplayName(c);
-                      const avatarUrl = resolveAvatarUrl(c.doctor_avatar_path);
-                      const lastAt = new Date(c.last_message_created_at);
+                    inboxRows.map((c) => {
+                      const name = c.peerDisplayName;
+                      const avatarUrl = resolveAvatarUrl(c.peerAvatarPath);
+                      const lastAt = new Date(c.lastMessageCreatedAt);
                       const lastLabel = formatDistanceToNow(lastAt, {
                         addSuffix: true,
+                        locale: enUS,
                       });
                       return (
-                        <motion.li key={c.id} variants={presets.listItem}>
+                        <motion.li key={c.chatId} variants={presets.listItem}>
                           <button
                             type="button"
-                            onClick={() => openChat(c.id)}
+                            onClick={() => {
+                              void queryClient.prefetchQuery({
+                                queryKey: doctorChatKeys.messages(c.chatId),
+                                queryFn: () => fetchChatMessages(c.chatId),
+                                staleTime: CHAT_MESSAGES_STALE_MS,
+                              });
+                              openChat(c.chatId);
+                            }}
                             className="flex w-full items-center gap-3 rounded-xl border border-transparent bg-neutral-900/50 px-3 py-2.5 text-left transition hover:border-neutral-700 hover:bg-neutral-800/80 focus-visible:ring-2 focus-visible:ring-emerald-500/25 focus-visible:outline-none"
                           >
                             <DoctorAvatar
@@ -681,9 +708,9 @@ export function DoctorChatWidget() {
                   </button>
                   {selectedConversation ? (
                     <DoctorAvatar
-                      name={chatDoctorDisplayName(selectedConversation)}
+                      name={selectedConversation.peerDisplayName}
                       avatarUrl={resolveAvatarUrl(
-                        selectedConversation.doctor_avatar_path,
+                        selectedConversation.peerAvatarPath,
                       )}
                       sizeClass="size-9"
                     />
@@ -691,35 +718,55 @@ export function DoctorChatWidget() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-neutral-100">
                       {selectedConversation
-                        ? chatDoctorDisplayName(selectedConversation)
-                        : "Doctor"}
+                        ? selectedConversation.peerDisplayName
+                        : chatRole === "doctor"
+                          ? "Patient"
+                          : "Doctor"}
                     </p>
                     <p className="truncate text-xs text-neutral-500">
                       {selectedConversation
                         ? formatDistanceToNow(
                             new Date(
-                              selectedConversation.last_message_created_at,
+                              selectedConversation.lastMessageCreatedAt,
                             ),
-                            { addSuffix: true },
+                            { addSuffix: true, locale: enUS },
                           )
                         : ""}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={close}
-                    className="inline-flex size-9 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
-                    aria-label="Close"
-                  >
-                    <X className="size-4" aria-hidden />
-                  </button>
+                  {selectedConversation ? (
+                    <button
+                      type="button"
+                      onClick={() => void onDeleteChat()}
+                      disabled={deleteChatMutation.isPending}
+                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-red-950/40 hover:text-red-200 focus-visible:ring-2 focus-visible:ring-red-400/35 focus-visible:outline-none disabled:opacity-40"
+                      aria-label="Delete chat"
+                    >
+                      {deleteChatMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden />
+                      ) : (
+                        <Trash2 className="size-4" aria-hidden />
+                      )}
+                    </button>
+                  ) : null}
+                  {!isPage ? (
+                    <button
+                      type="button"
+                      onClick={close}
+                      className="inline-flex size-9 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
+                      aria-label="Close"
+                    >
+                      <X className="size-4" aria-hidden />
+                    </button>
+                  ) : null}
                 </header>
 
                 <div
                   ref={listRef}
                   className="scrollbar-none min-h-0 flex-1 space-y-3 overflow-y-auto bg-neutral-950 px-3 py-3"
                 >
-                  {messagesQuery.isPending ? (
+                  {messagesQuery.isPending &&
+                  messagesQuery.data === undefined ? (
                     <div className="flex justify-center py-10">
                       <Loader2 className="size-7 animate-spin text-neutral-500" aria-hidden />
                     </div>
@@ -789,12 +836,88 @@ export function DoctorChatWidget() {
                 </footer>
               </>
             )}
+      </>
+    );
+  }
+
+  const ui = (
+    <>
+      <AnimatePresence mode="sync">
+        {!isOpen && chatRole && !isPage ? (
+          <motion.button
+            key="doctor-chat-fab"
+            type="button"
+            onClick={open}
+            variants={presets.fabVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className={cn(
+              "fixed right-6 bottom-6 z-120 inline-flex origin-bottom-right items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium text-neutral-100 shadow-2xl backdrop-blur-md hover:brightness-110 focus-visible:ring-2 focus-visible:ring-emerald-400/30 focus-visible:outline-none",
+              "border-neutral-700 bg-neutral-950/95 ring-1 ring-neutral-600/50",
+            )}
+            aria-expanded={false}
+            aria-haspopup="dialog"
+            style={{ willChange: "transform, opacity" }}
+          >
+            <MessageCircle
+              className="size-5 shrink-0 text-emerald-400/90"
+              strokeWidth={2}
+              aria-hidden
+            />
+            Chat
+          </motion.button>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence mode="sync">
+        {isOpen && chatRole && !isPage ? (
+          <>
+            <motion.section
+              key="doctor-chat-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Chats"
+              variants={presets.panelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className={cn(
+                "fixed inset-y-0 right-0 z-110 flex h-dvh min-h-0 max-w-[100vw] flex-col overflow-hidden border-l",
+                "border-neutral-800 bg-neutral-950 text-neutral-100 backdrop-blur-xl",
+              )}
+              style={{
+                width: panelWidthPx,
+                transformOrigin: "100% 50%",
+                willChange: "transform, opacity",
+              }}
+            >
+              {renderChatPanelBody()}
             </motion.section>
           </>
         ) : null}
       </AnimatePresence>
     </>
   );
+
+  if (isPage) {
+    if (!chatRole) {
+      return (
+        <div className="flex min-h-screen w-full flex-1 flex-col items-center justify-center bg-neutral-950 p-6 text-sm text-neutral-400">
+          Chats are available as a patient or as a doctor.
+        </div>
+      );
+    }
+    return (
+      <section
+        role="region"
+        aria-label="Chats"
+        className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-neutral-950 text-neutral-100"
+      >
+        {renderChatPanelBody()}
+      </section>
+    );
+  }
 
   if (!mounted || typeof document === "undefined") {
     return null;

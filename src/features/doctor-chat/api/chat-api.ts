@@ -1,111 +1,14 @@
-import { apiFetch, ApiError } from "@/shared/api";
+import { fetchMyChats } from "@/entities/doctor-directory";
+import { apiFetch } from "@/shared/api";
 
 import type {
-  CreateChatBody,
-  CreateChatResponse,
-  DoctorDepartmentDto,
   GetManyChatMessagesResponse,
-  GetManyChatsResponse,
-  GetManyDepartmentsResponse,
-  GetManyDoctorDepartmentsResponse,
-  GetManyOrganizationsResponse,
+  GetManyDoctorChatsResponse,
+  GetManyDoctorOwnDepartmentsResponse,
   SendChatMessageBody,
   SendChatMessageResponse,
+  UnifiedInboxRow,
 } from "./types";
-
-export interface DoctorDirectoryResult {
-  organizationId: string;
-  departmentId: string;
-  doctors: DoctorDepartmentDto[];
-}
-
-/**
- * Loads first active organization → first active department → doctors in that department.
- * Matches how the API scopes doctor listings.
- */
-export async function fetchDoctorDirectory(): Promise<DoctorDirectoryResult> {
-  const orgs = await fetchOrganizations();
-  const org = orgs.organizations?.[0];
-  if (!org) {
-    throw new Error("NO_ORGANIZATIONS");
-  }
-  const depts = await fetchDepartments(org.id);
-  const dept = depts.departments?.[0];
-  if (!dept) {
-    throw new Error("NO_DEPARTMENTS");
-  }
-  const docs = await fetchDoctorDepartments(org.id, dept.id);
-  const list = docs.doctor_departments ?? [];
-  const doctors = list.filter((d) => d.is_active && d.is_enabled);
-  return {
-    organizationId: org.id,
-    departmentId: dept.id,
-    doctors,
-  };
-}
-
-export async function fetchOrganizations(): Promise<GetManyOrganizationsResponse> {
-  return apiFetch<GetManyOrganizationsResponse>("/organizations");
-}
-
-export async function fetchDepartments(
-  organizationId: string,
-): Promise<GetManyDepartmentsResponse> {
-  return apiFetch<GetManyDepartmentsResponse>(
-    `/organizations/${organizationId}/departments`,
-  );
-}
-
-export async function fetchDoctorDepartments(
-  organizationId: string,
-  departmentId: string,
-): Promise<GetManyDoctorDepartmentsResponse> {
-  return apiFetch<GetManyDoctorDepartmentsResponse>(
-    `/organizations/${organizationId}/departments/${departmentId}/doctors`,
-  );
-}
-
-export async function fetchMyChats(): Promise<GetManyChatsResponse> {
-  return apiFetch<GetManyChatsResponse>("/user/me/chats");
-}
-
-export async function createChat(
-  body: CreateChatBody,
-): Promise<CreateChatResponse> {
-  return apiFetch<CreateChatResponse>("/user/me/chats", {
-    method: "POST",
-    json: body,
-  });
-}
-
-/**
- * Resolves chat UUID for a doctor department: existing row or creates one.
- */
-export async function resolveChatIdForDoctorDepartment(
-  doctorDepartmentId: string,
-): Promise<string> {
-  const { chats } = await fetchMyChats();
-  const existing = chats.find(
-    (c) => c.doctor_department_id === doctorDepartmentId,
-  );
-  if (existing) return existing.id;
-
-  try {
-    const created = await createChat({
-      doctor_department_id: doctorDepartmentId,
-    });
-    return created.chat_id;
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 409) {
-      const { chats: again } = await fetchMyChats();
-      const found = again.find(
-        (c) => c.doctor_department_id === doctorDepartmentId,
-      );
-      if (found) return found.id;
-    }
-    throw e;
-  }
-}
 
 export async function fetchChatMessages(
   chatId: string,
@@ -125,5 +28,71 @@ export async function sendChatMessage(
       method: "POST",
       json: body,
     },
+  );
+}
+
+export async function fetchDoctorOwnDepartments(): Promise<GetManyDoctorOwnDepartmentsResponse> {
+  return apiFetch<GetManyDoctorOwnDepartmentsResponse>("/user/doctor/departments");
+}
+
+export async function fetchDoctorChatsForDepartment(
+  doctorDepartmentId: string,
+): Promise<GetManyDoctorChatsResponse> {
+  return apiFetch<GetManyDoctorChatsResponse>(
+    `/user/doctor/departments/${doctorDepartmentId}/chats`,
+  );
+}
+
+export async function deleteChatAsPatient(chatId: string): Promise<void> {
+  await apiFetch<unknown>(`/user/me/chats/${chatId}`, { method: "DELETE" });
+}
+
+export async function deleteChatAsDoctor(
+  doctorDepartmentId: string,
+  chatId: string,
+): Promise<void> {
+  await apiFetch<unknown>(
+    `/user/doctor/departments/${doctorDepartmentId}/chats/${chatId}`,
+    { method: "DELETE" },
+  );
+}
+
+/** Patient: chat list from the backend only — no org/dept catalog. */
+export async function fetchUnifiedInboxForPatient(): Promise<UnifiedInboxRow[]> {
+  const { chats } = await fetchMyChats();
+  return chats.map((c) => ({
+    kind: "patient",
+    chatId: c.id,
+    doctorDepartmentId: c.doctor_department_id,
+    peerDisplayName:
+      `Dr. ${c.doctor_first_name} ${c.doctor_last_name}`.trim() || "Doctor",
+    peerAvatarPath: c.doctor_avatar_path || null,
+    lastMessageCreatedAt: c.last_message_created_at,
+  }));
+}
+
+export async function fetchUnifiedInboxForDoctor(): Promise<UnifiedInboxRow[]> {
+  const { doctors_departments: depts } = await fetchDoctorOwnDepartments();
+  const active = depts.filter((d) => d.is_active && d.is_enabled);
+  const chunks = await Promise.all(
+    active.map(async (dep) => {
+      const { chats } = await fetchDoctorChatsForDepartment(dep.id);
+      return chats.map(
+        (c): UnifiedInboxRow => ({
+          kind: "doctor",
+          chatId: c.id,
+          doctorDepartmentId: c.doctor_department_id,
+          peerDisplayName:
+            `${c.patient_first_name} ${c.patient_last_name}`.trim() || "Patient",
+          peerAvatarPath: c.patient_avatar_path || null,
+          lastMessageCreatedAt: c.last_message_created_at,
+        }),
+      );
+    }),
+  );
+  return chunks.flat().sort(
+    (a, b) =>
+      new Date(b.lastMessageCreatedAt).getTime() -
+      new Date(a.lastMessageCreatedAt).getTime(),
   );
 }

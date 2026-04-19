@@ -101,8 +101,8 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
           match: "exact",
         },
         {
-          href: routes.patient.doctors,
-          label: "Find doctors",
+          href: routes.patient.organisations,
+          label: "Organizations",
           icon: Search,
         },
         {
