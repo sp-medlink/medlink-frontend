@@ -37,6 +37,17 @@
   }
 }
 
+@layer utilities {
+  /* Scroll still works; bar hidden (Firefox / WebKit / legacy Edge). */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
