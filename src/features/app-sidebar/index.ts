@@ -5,8 +5,9 @@ export {
   getNavItems,
   getSidebarAreaFromPath,
   isNavActive,
-  resolveSettingsSidebarArea,
+  resolveSidebarAreaFromAppRole,
   type NavItem,
   type NavMatch,
+  type NavOptions,
   type SidebarArea,
 } from "./model/nav-config";

@@ -2,30 +2,28 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { routes } from "@/shared/config";
-import {
-  useAppRole,
-  useIsAuthenticated,
-  useIsSessionHydrated,
-} from "../model/selectors";
+import { useIsAuthenticated, useIsSessionHydrated } from "../model/selectors";
+import { useLandingRoute } from "../model/use-landing-route";
 
 interface RedirectIfAuthenticatedProps {
   children: ReactNode;
 }
 
+/**
+ * Bounces an already-authenticated user away from public pages (login /
+ * signup) to wherever `useLandingRoute` decides they belong.
+ */
 export function RedirectIfAuthenticated({ children }: RedirectIfAuthenticatedProps) {
   const hydrated = useIsSessionHydrated();
-  const isAuthenticated = useIsAuthenticated();
-  const appRole = useAppRole();
+  const authed = useIsAuthenticated();
+  const landing = useLandingRoute();
   const router = useRouter();
 
   useEffect(() => {
-    if (!hydrated || !isAuthenticated) return;
-    if (appRole === "admin") router.replace(routes.admin.root);
-    else if (appRole === "doctor") router.replace(routes.doctor.root);
-    else router.replace(routes.patient.root);
-  }, [hydrated, isAuthenticated, appRole, router]);
+    if (!hydrated || !authed) return;
+    if (landing.href) router.replace(landing.href);
+  }, [hydrated, authed, landing.href, router]);
 
-  if (hydrated && isAuthenticated) return null;
+  if (hydrated && authed) return null;
   return <>{children}</>;
 }

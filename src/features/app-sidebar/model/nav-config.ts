@@ -17,21 +17,20 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  Stethoscope,
+  UserCog,
   UserRound,
-  Users,
   Video,
 } from "lucide-react";
 
 import type { AppRole } from "@/shared/config";
 import { routes } from "@/shared/config";
 
-export type SidebarArea =
-  | "patient"
-  | "doctor"
-  | "admin"
-  | "dept-admin"
-  | "org-admin";
+/**
+ * Sidebar surfaces match the three real `AppRole`s. Admin sub-personas
+ * (org / dept) share the same `admin` surface — they're capabilities, not
+ * roles, and the unified `/admin` area handles what each can actually do.
+ */
+export type SidebarArea = "patient" | "doctor" | "admin";
 
 export type NavMatch = "exact" | "prefix";
 
@@ -43,27 +42,54 @@ export interface NavItem {
   match?: NavMatch;
 }
 
+export interface NavOptions {
+  /**
+   * If true, an "Admin" entry is injected into the patient/doctor sidebars
+   * so users who hold an admin capability (org-admin, dept-admin, …) without
+   * the platform `admin` base role can still discover the admin area.
+   */
+  isAnyAdmin?: boolean;
+}
+
 export function getSidebarAreaFromPath(pathname: string): SidebarArea | null {
   const first = pathname.split("/").filter(Boolean)[0];
   if (first === "patient") return "patient";
   if (first === "doctor") return "doctor";
   if (first === "admin") return "admin";
-  if (first === "dept-admin") return "dept-admin";
-  if (first === "org-admin") return "org-admin";
   return null;
 }
 
-/** Fallback sidebar when opening `/settings` directly (no prior route in session). */
-export function resolveSettingsSidebarArea(appRole: AppRole | null): SidebarArea {
-  if (appRole === "admin") return "admin";
-  if (appRole === "doctor") return "doctor";
-  return "patient";
+/**
+ * Fallback area when a path doesn't imply one (e.g. `/settings`). Uses the
+ * user's base app role — settings belong with whatever the user primarily
+ * does, not with their admin surface.
+ */
+export function resolveSidebarAreaFromAppRole(
+  appRole: AppRole | null,
+): SidebarArea | null {
+  switch (appRole) {
+    case "admin":
+      return "admin";
+    case "doctor":
+      return "doctor";
+    case "patient":
+      return "patient";
+    case null:
+    default:
+      return null;
+  }
 }
 
-export function getNavItems(area: SidebarArea): NavItem[] {
+export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[] {
+  const adminLink: NavItem = {
+    href: routes.admin.root,
+    label: "Admin",
+    icon: UserCog,
+  };
+
   switch (area) {
-    case "patient":
-      return [
+    case "patient": {
+      const items: NavItem[] = [
         {
           href: routes.patient.root,
           label: "Home",
@@ -105,14 +131,17 @@ export function getNavItems(area: SidebarArea): NavItem[] {
           label: "Notifications",
           icon: Bell,
         },
-        {
-          href: routes.settings,
-          label: "Profile & settings",
-          icon: Settings,
-        },
       ];
-    case "doctor":
-      return [
+      if (opts.isAnyAdmin) items.push(adminLink);
+      items.push({
+        href: routes.settings,
+        label: "Profile & settings",
+        icon: Settings,
+      });
+      return items;
+    }
+    case "doctor": {
+      const items: NavItem[] = [
         {
           href: routes.doctor.root,
           label: "Home",
@@ -159,12 +188,15 @@ export function getNavItems(area: SidebarArea): NavItem[] {
           label: "Departments",
           icon: Hospital,
         },
-        {
-          href: routes.settings,
-          label: "Profile & settings",
-          icon: Settings,
-        },
       ];
+      if (opts.isAnyAdmin) items.push(adminLink);
+      items.push({
+        href: routes.settings,
+        label: "Profile & settings",
+        icon: Settings,
+      });
+      return items;
+    }
     case "admin":
       return [
         {
@@ -197,59 +229,6 @@ export function getNavItems(area: SidebarArea): NavItem[] {
           href: routes.admin.moderation,
           label: "Moderation",
           icon: Flag,
-        },
-        {
-          href: routes.settings,
-          label: "Profile & settings",
-          icon: Settings,
-        },
-      ];
-    case "dept-admin":
-      return [
-        {
-          href: routes.deptAdmin.root,
-          label: "Overview",
-          icon: LayoutDashboard,
-          match: "exact",
-        },
-        {
-          href: routes.deptAdmin.staff,
-          label: "Staff",
-          icon: Users,
-        },
-        {
-          href: routes.deptAdmin.schedule,
-          label: "Schedule",
-          icon: Calendar,
-        },
-        {
-          href: routes.settings,
-          label: "Profile & settings",
-          icon: Settings,
-        },
-      ];
-    case "org-admin":
-      return [
-        {
-          href: routes.orgAdmin.root,
-          label: "Overview",
-          icon: LayoutDashboard,
-          match: "exact",
-        },
-        {
-          href: routes.orgAdmin.organizations,
-          label: "Organizations",
-          icon: Building2,
-        },
-        {
-          href: routes.orgAdmin.departments,
-          label: "Departments",
-          icon: GitBranch,
-        },
-        {
-          href: routes.orgAdmin.doctors,
-          label: "Doctors",
-          icon: Stethoscope,
         },
         {
           href: routes.settings,

@@ -11,7 +11,7 @@ import { cn } from "@/shared/lib/utils";
 
 import {
   getSidebarAreaFromPath,
-  resolveSettingsSidebarArea,
+  resolveSidebarAreaFromAppRole,
   type SidebarArea,
 } from "../model/nav-config";
 import { readSidebarOpenFromStorage } from "../model/sidebar-preference";
@@ -21,10 +21,20 @@ interface PrivateAppShellProps {
   children: ReactNode;
 }
 
-function isSettingsPath(pathname: string): boolean {
-  return pathname === "/settings" || pathname.startsWith("/settings/");
-}
-
+/**
+ * Wraps every private route in the sidebar shell. The area is resolved in
+ * this order:
+ *
+ *   1. Area implied by the URL path (`/patient`, `/doctor`, `/admin`).
+ *   2. Last-seen area from the current navigation session — keeps
+ *      `/settings` feeling attached to whatever the user was just working
+ *      in.
+ *   3. Fallback from the user's base app role.
+ *
+ * The admin area is intentionally *not* role-based — a patient who is also
+ * an org-admin still sees the patient sidebar by default, with an "Admin"
+ * shortcut injected (see `AppSidebar`).
+ */
 export function PrivateAppShell({ children }: PrivateAppShellProps) {
   const pathname = usePathname();
   const appRole = useAppRole();
@@ -42,11 +52,8 @@ export function PrivateAppShell({ children }: PrivateAppShellProps) {
 
   const area = useMemo((): SidebarArea | null => {
     if (areaFromPath) return areaFromPath;
-    if (isSettingsPath(pathname)) {
-      return lastAreaRef.current ?? resolveSettingsSidebarArea(appRole);
-    }
-    return null;
-  }, [pathname, areaFromPath, appRole]);
+    return lastAreaRef.current ?? resolveSidebarAreaFromAppRole(appRole);
+  }, [areaFromPath, appRole]);
 
   useEffect(() => {
     if (sidebarHydrated.current) return;

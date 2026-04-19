@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { ApiError } from "@/shared/api";
 import { routes } from "@/shared/config";
-import { resolveAppRole } from "@/entities/session";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -67,10 +66,7 @@ export function SignupForm() {
     try {
       const user = await mutation.mutateAsync(values);
       toast.success(`Welcome, ${user.firstName}`);
-      const appRole = resolveAppRole(user.roles);
-      if (appRole === "admin") router.replace(routes.admin.root);
-      else if (appRole === "doctor") router.replace(routes.doctor.root);
-      else router.replace(routes.patient.root);
+      router.replace("/");
     } catch (err) {
       const message = err instanceof ApiError ? (err.reason ?? err.message) : "Signup failed";
       toast.error(message);

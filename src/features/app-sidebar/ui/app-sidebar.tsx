@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, ChevronLeft, Settings } from "lucide-react";
 
-import { useCurrentUser } from "@/entities/session";
+import { useAdminCapabilities, useCurrentUser } from "@/entities/session";
 import { LogoutButton } from "@/features/auth-logout";
 import { routes } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
@@ -26,7 +26,11 @@ interface AppSidebarProps {
 export function AppSidebar({ area, expanded, onToggle }: AppSidebarProps) {
   const pathname = usePathname();
   const user = useCurrentUser();
-  const items = getNavItems(area);
+  const caps = useAdminCapabilities();
+  // Inject the "Admin" shortcut into patient/doctor sidebars for users who
+  // hold admin capability through data ownership (org-admins / dept-admins)
+  // rather than the platform `admin` base role.
+  const items = getNavItems(area, { isAnyAdmin: caps.anyAdmin });
 
   const displayName = user
     ? [user.firstName, user.lastName].filter(Boolean).join(" ")

@@ -30,17 +30,12 @@ export const routes = {
     /** Orgs / departments the doctor belongs to */
     departments: "/doctor/departments",
   },
-  deptAdmin: {
-    root: "/dept-admin",
-    staff: "/dept-admin/staff",
-    schedule: "/dept-admin/schedule",
-  },
-  orgAdmin: {
-    root: "/org-admin",
-    organizations: "/org-admin/organizations",
-    departments: "/org-admin/departments",
-    doctors: "/org-admin/doctors",
-  },
+  /**
+   * Unified admin area. A single surface that adapts to whatever admin
+   * capabilities the user has (platform / org / department). There is no
+   * separate `/org-admin` or `/dept-admin` route tree — those are not roles,
+   * they are data relationships. See {@link useAdminCapabilities}.
+   */
   admin: {
     root: "/admin",
     verifications: "/admin/verifications",
