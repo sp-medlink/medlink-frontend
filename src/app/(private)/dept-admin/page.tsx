@@ -1,5 +1,3 @@
-import { LogoutButton } from "@/features/auth-logout";
-
 export default function DeptAdminHomePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
@@ -8,7 +6,6 @@ export default function DeptAdminHomePage() {
         Only doctors flagged as is_dept_admin have access here. Membership is resolved by the
         dept-admin feature slice when it&apos;s built.
       </p>
-      <LogoutButton />
     </main>
   );
 }

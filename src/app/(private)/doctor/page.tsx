@@ -1,7 +1,6 @@
 "use client";
 
 import { useCurrentUser } from "@/entities/session";
-import { LogoutButton } from "@/features/auth-logout";
 
 export default function DoctorHomePage() {
   const user = useCurrentUser();
@@ -11,7 +10,6 @@ export default function DoctorHomePage() {
       <p className="text-muted-foreground text-sm">
         Hello, Dr. {user?.lastName ?? ""}. Feature slices will render here.
       </p>
-      <LogoutButton />
     </main>
   );
 }

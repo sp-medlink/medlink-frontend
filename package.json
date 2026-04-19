@@ -18,6 +18,7 @@
     "class-variance-authority": "^0.7",
     "clsx": "^2",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.38.0",
     "jwt-decode": "^4",
     "livekit-client": "^2",
     "lucide-react": "^0.460",
