@@ -83,6 +83,7 @@ export function DoctorAppointmentsView() {
               serverUrl={session.url}
               token={session.token}
               onDisconnected={() => setSession(null)}
+              participantRole="doctor"
             />
           </CardContent>
         </Card>

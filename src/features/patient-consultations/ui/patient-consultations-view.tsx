@@ -72,6 +72,7 @@ export function PatientConsultationsView() {
               serverUrl={session.url}
               token={session.token}
               onDisconnected={() => setSession(null)}
+              participantRole="patient"
             />
           </CardContent>
         </Card>
