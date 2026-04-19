@@ -3,14 +3,19 @@ import type { Route } from "next";
 import {
   Building2,
   Calendar,
+  Home,
   MessageCircle,
   Shield,
   Stethoscope,
+  UserRound,
+  UsersRound,
   Video,
 } from "lucide-react";
+
 import { Button } from "@/shared/ui/button";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -47,6 +52,7 @@ const features = [
 const audiences = [
   {
     title: "Patients",
+    icon: UserRound,
     points: [
       "Book and join telehealth visits",
       "Browse organisations and departments",
@@ -55,6 +61,7 @@ const audiences = [
   },
   {
     title: "Clinicians",
+    icon: UsersRound,
     points: [
       "Manage schedule and appointments",
       "Run consultations and coordinate with departments",
@@ -86,9 +93,7 @@ const APP_QUICK_LINKS = {
 
 type AppVariant = keyof typeof APP_QUICK_LINKS;
 
-function isAppVariant(
-  v: HomeLandingVariant,
-): v is AppVariant {
+function isAppVariant(v: HomeLandingVariant): v is AppVariant {
   return v === "patient" || v === "doctor" || v === "admin";
 }
 
@@ -146,19 +151,19 @@ export function HomeLandingView({
   return (
     <div
       className={
-        isApp
-          ? "bg-background text-foreground w-full min-w-0"
-          : "bg-background text-foreground min-h-screen"
+        isMarketing
+          ? "from-muted/35 bg-linear-to-b via-background to-background text-foreground min-h-screen"
+          : "from-muted/35 bg-linear-to-b via-background to-background text-foreground w-full min-w-0 min-h-full"
       }
     >
       {isMarketing && (
-        <header className="border-border/80 bg-background/80 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
-          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+        <header className="border-border/80 bg-background/85 supports-backdrop-filter:bg-background/65 sticky top-0 z-50 border-b backdrop-blur">
+          <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <Link
               href="/"
               className="flex items-center gap-2 font-semibold tracking-tight"
             >
-              <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
+              <span className="bg-card text-primary flex size-9 items-center justify-center rounded-xl border shadow-sm ring-1 ring-black/5 dark:ring-white/10">
                 <Stethoscope className="size-4" aria-hidden />
               </span>
               Medlink
@@ -175,58 +180,81 @@ export function HomeLandingView({
         </header>
       )}
 
-      <main>
-        <section className="from-muted/40 border-border/60 relative overflow-hidden border-b bg-linear-to-b to-transparent">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.12),transparent)]" />
-          <div className="relative mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-            <p className="text-muted-foreground mb-4 inline-flex items-center gap-2 text-sm">
-              <Shield className="size-4 shrink-0" aria-hidden />
-              {isMarketing
-                ? "Telemedicine platform"
-                : (appCopy?.badge ?? "Medlink")}
-            </p>
-            <h1 className="text-foreground max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl sm:leading-tight md:text-5xl">
-              {isMarketing
-                ? "Care that meets you where you are"
-                : (appCopy?.title ?? "Medlink")}
-            </h1>
-            <p className="text-muted-foreground mt-5 max-w-2xl text-lg leading-relaxed">
-              {isMarketing
-                ? "Medlink brings video visits, scheduling, and messaging together so patients and clinicians can collaborate without friction."
-                : (appCopy?.subtitle ?? "")}
-            </p>
-            <div className="mt-10 flex flex-wrap items-center gap-3">
-              {isMarketing ? (
-                <>
-                  <Button size="lg" asChild>
-                    <Link href={routes.signup}>Get started</Link>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild>
-                    <Link href={routes.login}>Log in</Link>
-                  </Button>
-                </>
-              ) : (
-                quickLinks.map(({ href, label }, i) => (
-                  <Button
-                    key={href}
-                    size="lg"
-                    variant={i === 0 ? "default" : "outline"}
-                    asChild
-                  >
-                    <Link href={href as Route}>{label}</Link>
-                  </Button>
-                ))
-              )}
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-4 py-8 sm:px-6 lg:gap-12 lg:px-8 lg:py-10">
+        <section className="bg-card/80 relative overflow-hidden rounded-2xl border shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.1),transparent)]" />
+          <div className="relative space-y-5 p-6 sm:p-8">
+            <div
+              className="h-px w-full max-w-md bg-linear-to-r from-primary/25 via-primary/10 to-transparent"
+              aria-hidden
+            />
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+              <div className="bg-card flex size-14 shrink-0 items-center justify-center rounded-2xl border shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+                {isMarketing ? (
+                  <Stethoscope
+                    className="text-primary size-7"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                ) : (
+                  <Home
+                    className="text-primary size-7"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-4">
+                <p className="text-muted-foreground inline-flex items-center gap-2 text-sm">
+                  <Shield className="size-4 shrink-0" aria-hidden />
+                  {isMarketing
+                    ? "Telemedicine platform"
+                    : (appCopy?.badge ?? "Medlink")}
+                </p>
+                <h1 className="text-foreground max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl sm:leading-tight md:text-[2.5rem] md:leading-tight">
+                  {isMarketing
+                    ? "Care that meets you where you are"
+                    : (appCopy?.title ?? "Medlink")}
+                </h1>
+                <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed sm:text-[0.9375rem]">
+                  {isMarketing
+                    ? "Medlink brings video visits, scheduling, and messaging together so patients and clinicians can collaborate without friction."
+                    : (appCopy?.subtitle ?? "")}
+                </p>
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  {isMarketing ? (
+                    <>
+                      <Button size="lg" asChild>
+                        <Link href={routes.signup}>Get started</Link>
+                      </Button>
+                      <Button size="lg" variant="outline" asChild>
+                        <Link href={routes.login}>Log in</Link>
+                      </Button>
+                    </>
+                  ) : (
+                    quickLinks.map(({ href, label }, i) => (
+                      <Button
+                        key={href}
+                        size="lg"
+                        variant={i === 0 ? "default" : "outline"}
+                        asChild
+                      >
+                        <Link href={href as Route}>{label}</Link>
+                      </Button>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="mb-10 max-w-2xl">
+        <section className="space-y-8">
+          <div className="space-y-2">
             <h2 className="text-2xl font-semibold tracking-tight">
               Everything in one workspace
             </h2>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed sm:text-base">
+            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed sm:text-[0.9375rem]">
               {isMarketing
                 ? "The same flows you use in the app — described for newcomers landing on the home page."
                 : (appCopy?.workspaceBlurb ?? "")}
@@ -234,95 +262,128 @@ export function HomeLandingView({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {features.map(({ icon: Icon, title, description }) => (
-              <Card key={title} className="shadow-sm">
-                <CardHeader className="gap-3">
-                  <div className="bg-muted text-foreground flex size-10 items-center justify-center rounded-lg">
-                    <Icon className="size-5" aria-hidden />
+              <Card
+                key={title}
+                className="overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+              >
+                <CardHeader className="border-b bg-muted/30 pb-5">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-background flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm">
+                      <Icon
+                        className="text-muted-foreground size-5"
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="min-w-0 space-y-1.5">
+                      <CardTitle className="text-lg leading-snug">{title}</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        {description}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <CardTitle className="text-base">{title}</CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {description}
-                  </CardDescription>
                 </CardHeader>
               </Card>
             ))}
           </div>
         </section>
 
-        <section className="border-border bg-muted/30 border-y">
-          <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-            <h2 className="mb-10 text-2xl font-semibold tracking-tight">
+        <section>
+          <div className="rounded-2xl border bg-muted/25 p-6 ring-1 ring-black/5 dark:ring-white/10 sm:p-8">
+            <h2 className="text-2xl font-semibold tracking-tight">
               Built for patients and clinicians
             </h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              {audiences.map(({ title, points }) => (
-                <Card key={title} className="border-border/80 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{title}</CardTitle>
-                    <ul className="text-muted-foreground mt-4 list-inside list-disc space-y-2 text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+              One platform for care journeys — whether you seek treatment or
+              provide it.
+            </p>
+            <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6">
+              {audiences.map(({ title, points, icon: AudienceIcon }) => (
+                <Card
+                  key={title}
+                  className="bg-card overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+                >
+                  <CardHeader className="border-b bg-muted/30">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-background flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm">
+                        <AudienceIcon
+                          className="text-muted-foreground size-5"
+                          aria-hidden
+                        />
+                      </div>
+                      <CardTitle className="text-lg pt-0.5">{title}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-5">
+                    <ul className="text-muted-foreground list-inside list-disc space-y-2.5 text-sm leading-relaxed marker:text-primary/80">
                       {points.map((p) => (
-                        <li key={p}>{p}</li>
+                        <li key={p} className="pl-0.5">
+                          {p}
+                        </li>
                       ))}
                     </ul>
-                  </CardHeader>
+                  </CardContent>
                 </Card>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl px-4 py-12 text-center sm:px-6 sm:py-16">
-          {isMarketing ? (
-            <>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Ready to join?
-              </h2>
-              <p className="text-muted-foreground mx-auto mt-2 max-w-lg text-sm leading-relaxed">
-                Create an account or sign in to open your dashboard — routing
-                depends on your role and permissions.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Button size="lg" asChild>
-                  <Link href={routes.signup}>Create account</Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href={routes.login}>Log in</Link>
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Where to next?
-              </h2>
-              <p className="text-muted-foreground mx-auto mt-2 max-w-lg text-sm leading-relaxed">
-                Jump into the areas you use most — you stay on this page until
-                you open a section.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
-                {quickLinks.map(({ href, label }, i) => (
-                  <Button
-                    key={href}
-                    size="lg"
-                    variant={i === 0 ? "default" : "outline"}
-                    asChild
-                  >
-                    <Link href={href as Route}>{label}</Link>
-                  </Button>
-                ))}
-              </div>
-              <div className="mt-6">
-                <Button variant="link" asChild>
-                  <Link href={routes.settings}>Profile & settings</Link>
-                </Button>
-              </div>
-            </>
-          )}
-        </section>
+        <Card className="border-dashed shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+          <CardContent className="px-6 py-8 sm:px-8 sm:py-10">
+            <div className="mx-auto max-w-lg text-center">
+              {isMarketing ? (
+                <>
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Ready to join?
+                  </h2>
+                  <p className="text-muted-foreground mt-3 text-sm leading-relaxed sm:text-[0.9375rem]">
+                    Create an account or sign in to open your dashboard —
+                    routing depends on your role and permissions.
+                  </p>
+                  <div className="mt-8 flex flex-wrap justify-center gap-3">
+                    <Button size="lg" asChild>
+                      <Link href={routes.signup}>Create account</Link>
+                    </Button>
+                    <Button size="lg" variant="outline" asChild>
+                      <Link href={routes.login}>Log in</Link>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Where to next?
+                  </h2>
+                  <p className="text-muted-foreground mt-3 text-sm leading-relaxed sm:text-[0.9375rem]">
+                    Jump into the areas you use most — you stay on this page
+                    until you open a section.
+                  </p>
+                  <div className="mt-8 flex flex-wrap justify-center gap-3">
+                    {quickLinks.map(({ href, label }, i) => (
+                      <Button
+                        key={href}
+                        size="lg"
+                        variant={i === 0 ? "default" : "outline"}
+                        asChild
+                      >
+                        <Link href={href as Route}>{label}</Link>
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="mt-6">
+                    <Button variant="link" asChild>
+                      <Link href={routes.settings}>Profile & settings</Link>
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </main>
 
       <footer className="border-border text-muted-foreground border-t py-8 text-sm">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
+        <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
           <p>© {new Date().getFullYear()} Medlink</p>
           <div className="flex gap-6">
             {isMarketing ? (

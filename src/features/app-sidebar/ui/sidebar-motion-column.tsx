@@ -22,23 +22,29 @@ interface SidebarMotionColumnProps {
   area: SidebarArea;
 }
 
+function sidebarSurfaceClass(open: boolean): string {
+  return open
+    ? "border-r border-neutral-200 bg-neutral-50 shadow-[2px_0_24px_-12px_rgba(0,0,0,0.12)] dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-[2px_0_24px_-12px_rgba(0,0,0,0.4)]"
+    : "border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950";
+}
+
 export function SidebarMotionColumn({ open, onOpen, onClose, area }: SidebarMotionColumnProps) {
   const reduceMotion = useReducedMotion();
   const shellTransition = reduceMotion ? { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const } : panelSpring;
 
+  const widthMotion = {
+    initial: false as const,
+    animate: { width: open ? WIDTH_EXPANDED : WIDTH_COLLAPSED },
+    transition: shellTransition,
+  };
+
   return (
-    <div className="relative flex shrink-0">
+    <>
+      {/* Keeps main content offset while the real sidebar is position:fixed */}
+      <motion.div aria-hidden className="shrink-0" {...widthMotion} />
       <motion.div
-        className={
-          open
-            ? "relative min-h-screen shrink-0 overflow-hidden border-r border-neutral-200 bg-neutral-50 shadow-[2px_0_24px_-12px_rgba(0,0,0,0.12)] dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-[2px_0_24px_-12px_rgba(0,0,0,0.4)]"
-            : "relative min-h-screen shrink-0 overflow-hidden border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950"
-        }
-        initial={false}
-        animate={{
-          width: open ? WIDTH_EXPANDED : WIDTH_COLLAPSED,
-        }}
-        transition={shellTransition}
+        className={`fixed top-0 left-0 z-40 flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden ${sidebarSurfaceClass(open)}`}
+        {...widthMotion}
       >
         <AppSidebar
           area={area}
@@ -46,6 +52,6 @@ export function SidebarMotionColumn({ open, onOpen, onClose, area }: SidebarMoti
           onToggle={() => (open ? onClose() : onOpen())}
         />
       </motion.div>
-    </div>
+    </>
   );
 }

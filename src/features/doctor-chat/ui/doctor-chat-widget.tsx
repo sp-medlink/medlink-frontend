@@ -24,6 +24,7 @@ import {
   GripVertical,
   Loader2,
   MessageCircle,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -222,6 +223,25 @@ function formatMessageTime(ts: number): string {
   });
 }
 
+function formatInboxTime(tsIso: string): string {
+  const ts = new Date(tsIso).getTime();
+  if (!Number.isFinite(ts)) return "";
+
+  const now = Date.now();
+  const dayStart = startOfLocalDay(ts);
+  const todayStart = startOfLocalDay(now);
+  if (dayStart === todayStart) {
+    return formatMessageTime(ts);
+  }
+  if (dayStart === todayStart - 86400000) {
+    return "Yesterday";
+  }
+  return new Date(ts).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function formatMyChatsError(err: unknown): string {
   if (err instanceof ApiError) {
     return err.reason ?? err.message;
@@ -304,7 +324,7 @@ function DoctorAvatar({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 overflow-hidden rounded-full bg-neutral-800 ring-1 ring-neutral-700/90",
+        "relative inline-flex shrink-0 overflow-hidden rounded-full bg-neutral-800 ring-1 ring-neutral-700/90 shadow-[0_1px_6px_rgba(0,0,0,0.35)]",
         sizeClass,
       )}
     >
@@ -394,6 +414,7 @@ export function DoctorChatWidget({
   const deleteChatMutation = useDeleteChatMutation();
 
   const [draft, setDraft] = useState("");
+  const [inboxSearch, setInboxSearch] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const panelResizeDragRef = useRef<{ startX: number; startW: number } | null>(
@@ -516,6 +537,14 @@ export function DoctorChatWidget({
   const reduceMotion = useReducedMotion();
   const presets = buildMotionPresets(reduceMotion);
 
+  const filteredInboxRows = useMemo(() => {
+    const q = inboxSearch.trim().toLowerCase();
+    if (!q) return inboxRows;
+    return inboxRows.filter((row) =>
+      row.peerDisplayName.toLowerCase().includes(q),
+    );
+  }, [inboxRows, inboxSearch]);
+
   const onDeleteChat = useCallback(async () => {
     if (!selectedConversation || !chatId) return;
     if (
@@ -574,10 +603,10 @@ export function DoctorChatWidget({
               <>
                 <header className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-800 bg-neutral-950 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold tracking-tight text-neutral-100">
+                    <p className="text-base font-semibold tracking-tight text-neutral-100">
                       Conversations
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="mt-0.5 text-xs text-neutral-500">
                       {isAuthenticated
                         ? `${inboxRows.length} ${inboxRows.length === 1 ? "conversation" : "conversations"} · Messages on server`
                         : "Sign in to send messages"}
@@ -586,7 +615,7 @@ export function DoctorChatWidget({
                     !(showNoChatsCard && chatRole === "patient") ? (
                       <Link
                         href={routes.patient.organisations}
-                        className="mt-1 inline-block text-xs font-medium text-emerald-400/90 underline-offset-2 hover:underline"
+                        className="mt-1.5 inline-block text-xs font-medium text-emerald-400/90 underline-offset-2 hover:text-emerald-300 hover:underline"
                         onClick={close}
                       >
                         Organizations
@@ -604,6 +633,32 @@ export function DoctorChatWidget({
                     </button>
                   ) : null}
                 </header>
+
+                {isAuthenticated && inboxRows.length > 0 ? (
+                  <div className="shrink-0 border-b border-neutral-800 bg-neutral-950 px-3 py-2.5">
+                    <label htmlFor="chat-inbox-search" className="sr-only">
+                      Search conversations
+                    </label>
+                    <div className="flex items-center gap-2 rounded-xl border border-neutral-800/90 bg-neutral-900/70 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition focus-within:border-neutral-600 focus-within:ring-2 focus-within:ring-emerald-500/15">
+                      <Search
+                        className="size-4 shrink-0 text-neutral-500"
+                        aria-hidden
+                      />
+                      <input
+                        id="chat-inbox-search"
+                        type="text"
+                        value={inboxSearch}
+                        onChange={(e) => setInboxSearch(e.target.value)}
+                        placeholder={
+                          chatRole === "doctor"
+                            ? "Search patients"
+                            : "Search doctors"
+                        }
+                        className="min-w-0 flex-1 bg-transparent text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                ) : null}
 
                 <motion.ul
                   className="scrollbar-none flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden bg-neutral-950 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
@@ -652,15 +707,15 @@ export function DoctorChatWidget({
                     ) : (
                       <NoChatsDoctorCard />
                     )
+                  ) : filteredInboxRows.length === 0 ? (
+                    <li className="rounded-xl border border-neutral-800 bg-neutral-900/40 px-3 py-4 text-center text-sm text-neutral-400">
+                      No conversations match your search.
+                    </li>
                   ) : (
-                    inboxRows.map((c) => {
+                    filteredInboxRows.map((c) => {
                       const name = c.peerDisplayName;
                       const avatarUrl = resolveAvatarUrl(c.peerAvatarPath);
-                      const lastAt = new Date(c.lastMessageCreatedAt);
-                      const lastLabel = formatDistanceToNow(lastAt, {
-                        addSuffix: true,
-                        locale: enUS,
-                      });
+                      const lastLabel = formatInboxTime(c.lastMessageCreatedAt);
                       return (
                         <motion.li key={c.chatId} variants={presets.listItem}>
                           <button
@@ -673,7 +728,12 @@ export function DoctorChatWidget({
                               });
                               openChat(c.chatId);
                             }}
-                            className="flex w-full items-center gap-3 rounded-xl border border-transparent bg-neutral-900/50 px-3 py-2.5 text-left transition hover:border-neutral-700 hover:bg-neutral-800/80 focus-visible:ring-2 focus-visible:ring-emerald-500/25 focus-visible:outline-none"
+                            className={cn(
+                              "group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition focus-visible:ring-2 focus-visible:ring-emerald-500/25 focus-visible:outline-none",
+                              selectedChatId === c.chatId
+                                ? "border-emerald-500/40 bg-emerald-500/10"
+                                : "border-transparent bg-neutral-900/55 hover:border-neutral-700 hover:bg-neutral-800/80",
+                            )}
                           >
                             <DoctorAvatar
                               name={name}
@@ -685,8 +745,13 @@ export function DoctorChatWidget({
                                 {name}
                               </span>
                               <span className="block truncate text-xs text-neutral-500">
-                                {lastLabel}
+                                {c.kind === "doctor"
+                                  ? "Patient conversation"
+                                  : "Doctor conversation"}
                               </span>
+                            </span>
+                            <span className="shrink-0 rounded-full border border-neutral-700/70 bg-neutral-800/80 px-2 py-0.5 text-[11px] text-neutral-400 transition group-hover:border-neutral-600 group-hover:text-neutral-300">
+                              {lastLabel}
                             </span>
                           </button>
                         </motion.li>
@@ -833,6 +898,9 @@ export function DoctorChatWidget({
                       )}
                     </button>
                   </div>
+                  <p className="px-1 pt-1 text-[11px] text-neutral-500">
+                    Press Enter to send, Shift+Enter for a new line.
+                  </p>
                 </footer>
               </>
             )}

@@ -38,7 +38,7 @@ export function AppSidebar({ area, expanded, onToggle }: AppSidebarProps) {
   return (
     <aside
       id="app-sidebar"
-      className="flex h-full min-h-screen w-full flex-col bg-transparent"
+      className="flex h-full min-h-0 w-full flex-col bg-transparent"
     >
       {expanded ? (
         <div className="flex h-14 shrink-0 items-center justify-between gap-1 border-b border-neutral-200 px-2 dark:border-neutral-800">
