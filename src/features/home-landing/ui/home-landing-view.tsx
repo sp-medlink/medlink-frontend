@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { routes } from "@/shared/config";
+import { cn } from "@/shared/lib/utils";
 
 const features = [
   {
@@ -221,7 +222,14 @@ export function HomeLandingView({
                     ? "Medlink brings video visits, scheduling, and messaging together so patients and clinicians can collaborate without friction."
                     : (appCopy?.subtitle ?? "")}
                 </p>
-                <div className="flex flex-wrap items-center gap-3 pt-1">
+                <div
+                  className={cn(
+                    "items-center gap-3 pt-1",
+                    isMarketing
+                      ? "flex flex-wrap"
+                      : "grid w-full max-w-3xl grid-cols-2 sm:grid-cols-4",
+                  )}
+                >
                   {isMarketing ? (
                     <>
                       <Button size="lg" asChild>
@@ -237,6 +245,7 @@ export function HomeLandingView({
                         key={href}
                         size="lg"
                         variant={i === 0 ? "default" : "outline"}
+                        className="w-full"
                         asChild
                       >
                         <Link href={href as Route}>{label}</Link>
@@ -330,7 +339,12 @@ export function HomeLandingView({
 
         <Card className="border-dashed shadow-sm ring-1 ring-black/5 dark:ring-white/10">
           <CardContent className="px-6 py-8 sm:px-8 sm:py-10">
-            <div className="mx-auto max-w-lg text-center">
+            <div
+              className={cn(
+                "mx-auto text-center",
+                isMarketing ? "max-w-lg" : "max-w-3xl",
+              )}
+            >
               {isMarketing ? (
                 <>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -358,12 +372,13 @@ export function HomeLandingView({
                     Jump into the areas you use most — you stay on this page
                     until you open a section.
                   </p>
-                  <div className="mt-8 flex flex-wrap justify-center gap-3">
+                  <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {quickLinks.map(({ href, label }, i) => (
                       <Button
                         key={href}
                         size="lg"
                         variant={i === 0 ? "default" : "outline"}
+                        className="w-full"
                         asChild
                       >
                         <Link href={href as Route}>{label}</Link>

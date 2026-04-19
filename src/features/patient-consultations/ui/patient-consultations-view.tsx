@@ -1,7 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarCheck2,
+  Loader2,
+  Sparkles,
+  Video,
+} from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +17,7 @@ import {
   fetchVideoCallTokenForAppointment,
 } from "@/entities/appointment";
 import { ApiError } from "@/shared/api";
+import { routes } from "@/shared/config";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -49,9 +57,9 @@ export function PatientConsultationsView() {
   );
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">
+    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Video consultations
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
@@ -88,10 +96,51 @@ export function PatientConsultationsView() {
             : null}
         </p>
       ) : online.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          You don&apos;t have a video call booking yet. When you have a confirmed
-          online visit, it will appear here and you can join the call.
-        </p>
+        <Card className="relative overflow-hidden border-dashed bg-card/95 shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+          <div className="pointer-events-none absolute -top-16 right-0 size-56 rounded-full bg-primary/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 left-8 size-56 rounded-full bg-cyan-500/10 blur-3xl" />
+          <CardHeader className="relative items-center pb-2 text-center">
+            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium">
+              <Sparkles className="text-primary size-3.5" aria-hidden />
+              Ready when your appointment is confirmed
+            </div>
+            <div className="bg-muted/80 mb-4 flex size-16 items-center justify-center rounded-2xl border shadow-inner">
+              <Video className="text-muted-foreground size-8" aria-hidden />
+            </div>
+            <CardTitle className="text-3xl tracking-tight">
+              No video consultations yet
+            </CardTitle>
+            <CardDescription className="max-w-2xl text-base leading-relaxed">
+              You don&apos;t have a video call booking yet. Once your online visit
+              is confirmed, it will appear here and you can join in one click.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="relative flex flex-col items-center gap-6 pt-2">
+            <div className="grid w-full max-w-2xl gap-3 sm:grid-cols-2">
+              <div className="flex items-center gap-2 rounded-xl border bg-background/75 px-3 py-2 text-sm">
+                <CalendarCheck2 className="text-primary size-4" aria-hidden />
+                <span>Book an online appointment first</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border bg-background/75 px-3 py-2 text-sm">
+                <Video className="text-primary size-4" aria-hidden />
+                <span>Join the call from this page</span>
+              </div>
+            </div>
+            <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Button size="lg" className="group min-w-[220px]" asChild>
+                <Link href={routes.patient.appointments}>
+                  My appointments
+                  <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="min-w-[220px]" asChild>
+                <Link href={routes.patient.organisations}>
+                  Organization directory
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <ul className="space-y-3">
           {online.map((a) => (

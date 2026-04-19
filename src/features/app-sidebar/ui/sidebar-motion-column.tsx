@@ -7,8 +7,8 @@ import { AppSidebar } from "./app-sidebar";
 import type { SidebarArea } from "../model/nav-config";
 import { cn } from "@/shared/lib/utils";
 
-const WIDTH_EXPANDED = "16rem";
-const WIDTH_COLLAPSED = "4rem";
+const WIDTH_EXPANDED = "18rem";
+const WIDTH_COLLAPSED = "4.75rem";
 
 const panelSpring = {
   type: "spring" as const,

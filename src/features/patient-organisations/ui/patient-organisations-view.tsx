@@ -26,7 +26,10 @@ export function PatientOrganisationsView() {
     queryFn: fetchOrganizations,
   });
 
-  const organizations = orgsQuery.data?.organizations ?? [];
+  const organizations = useMemo(
+    () => orgsQuery.data?.organizations ?? [],
+    [orgsQuery.data?.organizations],
+  );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -35,7 +38,7 @@ export function PatientOrganisationsView() {
   }, [organizations, q]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-6">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 p-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Organizations</h1>
         <p className="text-muted-foreground text-sm">
@@ -74,7 +77,7 @@ export function PatientOrganisationsView() {
             : "No matches — try a different search."}
         </p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((org) => {
             const av = orgAvatarUrl(org.avatar_path);
             const inactive = org.is_active === false;
@@ -83,7 +86,7 @@ export function PatientOrganisationsView() {
                 <Link
                   href={patientOrganisationPath(org.id) as Route}
                   className={cn(
-                    "flex gap-3 rounded-xl border p-4 transition hover:bg-muted/50",
+                    "flex h-full gap-3 rounded-xl border p-4 transition hover:bg-muted/50",
                     inactive && "opacity-60",
                   )}
                 >
