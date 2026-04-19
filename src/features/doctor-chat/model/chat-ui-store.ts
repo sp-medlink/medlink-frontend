@@ -6,14 +6,6 @@ import { useShellUiStore } from "@/features/app-shell/model/shell-ui-store";
 
 export type DoctorChatView = "list" | "chat";
 
-export interface DoctorOption {
-  id: string;
-  name: string;
-  specialty: string;
-  /** Profile photo URL; if missing or load fails, UI shows initials. */
-  avatarUrl?: string | null;
-}
-
 export interface ChatLine {
   id: string;
   role: "user" | "doctor";
@@ -40,36 +32,22 @@ function clampPanelWidth(w: number): number {
 interface ChatUiState {
   isOpen: boolean;
   view: DoctorChatView;
-  selectedDoctorId: string | null;
-  threads: Record<string, ChatLine[]>;
+  /** Open conversation (`/user/me/chats/{id}`). */
+  selectedChatId: string | null;
   /** Panel width when open; drives layout padding elsewhere. */
   panelWidthPx: number;
   setPanelWidthPx: (px: number) => void;
   open: () => void;
   close: () => void;
-  showDoctorList: () => void;
-  pickDoctor: (id: string) => void;
-  appendMessage: (doctorId: string, role: "user" | "doctor", body: string) => void;
-  clearThread: (doctorId: string) => void;
-}
-
-function newLine(role: "user" | "doctor", body: string): ChatLine {
-  return {
-    id:
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    role,
-    body,
-    createdAt: Date.now(),
-  };
+  /** Back to inbox (conversation list). */
+  showChatList: () => void;
+  openChat: (chatId: string) => void;
 }
 
 export const useDoctorChatUiStore = create<ChatUiState>((set) => ({
   isOpen: false,
   view: "list",
-  selectedDoctorId: null,
-  threads: {},
+  selectedChatId: null,
   panelWidthPx: CHAT_PANEL_WIDTH_DEFAULT,
   setPanelWidthPx: (px) => {
     const next = clampPanelWidth(px);
@@ -88,25 +66,10 @@ export const useDoctorChatUiStore = create<ChatUiState>((set) => ({
     set({
       isOpen: false,
       view: "list",
-      selectedDoctorId: null,
+      selectedChatId: null,
     }),
-  showDoctorList: () => set({ view: "list", selectedDoctorId: null }),
-  pickDoctor: (id) => set({ view: "chat", selectedDoctorId: id }),
-  appendMessage: (doctorId, role, body) => {
-    const line = newLine(role, body);
-    set((state) => ({
-      threads: {
-        ...state.threads,
-        [doctorId]: [...(state.threads[doctorId] ?? []), line],
-      },
-    }));
-  },
-  clearThread: (doctorId) =>
-    set((state) => {
-      const next = { ...state.threads };
-      delete next[doctorId];
-      return { threads: next };
-    }),
+  showChatList: () => set({ view: "list", selectedChatId: null }),
+  openChat: (chatId) => set({ view: "chat", selectedChatId: chatId }),
 }));
 
 /** Call once on client so width matches last session without flashing defaults. */

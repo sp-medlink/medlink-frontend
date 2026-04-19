@@ -22,17 +22,33 @@ import {
   ArrowUp,
   ChevronLeft,
   GripVertical,
+  Loader2,
   MessageCircle,
-  Stethoscope,
   X,
 } from "lucide-react";
+import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
-import type { ChatLine, DoctorOption } from "../model/chat-ui-store";
+import type { ChatDto } from "../api/types";
+import type { ChatLine } from "../model/chat-ui-store";
 import {
   hydrateChatPanelWidthFromStorage,
   useDoctorChatUiStore,
 } from "../model/chat-ui-store";
+import {
+  useChatMessagesQuery,
+  useMyChatsQuery,
+  useSendChatMessageMutation,
+} from "../model/use-doctor-chat-queries";
 
+import {
+  useCurrentUser,
+  useIsAuthenticated,
+  useIsSessionHydrated,
+} from "@/entities/session";
+import { ApiError } from "@/shared/api";
+import { env, routes } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
 
 /** Min / max height (px) — single line centered with send; then grows. */
@@ -153,53 +169,18 @@ function buildMotionPresets(reduceMotion: boolean | null) {
   };
 }
 
-/** Stable demo portraits (HTTPS); entries without `avatarUrl` use initials only. */
-const DEMO_DOCTORS: DoctorOption[] = [
-  {
-    id: "d1",
-    name: "Dr. Sarah Chen",
-    specialty: "Cardiology",
-    avatarUrl: "https://picsum.photos/seed/medlink-d1/128/128",
-  },
-  {
-    id: "d2",
-    name: "Dr. Marcus Webb",
-    specialty: "Family medicine",
-    avatarUrl: "https://picsum.photos/seed/medlink-d2/128/128",
-  },
-  {
-    id: "d3",
-    name: "Dr. Elena Petrov",
-    specialty: "Dermatology",
-    avatarUrl: "https://picsum.photos/seed/medlink-d3/128/128",
-  },
-  {
-    id: "d4",
-    name: "Dr. James Okonkwo",
-    specialty: "Neurology",
-    avatarUrl: "https://picsum.photos/seed/medlink-d4/128/128",
-  },
-  {
-    id: "d5",
-    name: "Dr. Priya Nair",
-    specialty: "Endocrinology",
-    avatarUrl: "https://picsum.photos/seed/medlink-d5/128/128",
-  },
-  {
-    id: "d6",
-    name: "Dr. Tomás Álvarez",
-    specialty: "Orthopedics",
-    avatarUrl: "https://picsum.photos/seed/medlink-d6/128/128",
-  },
-  { id: "d7", name: "Dr. Mei Lin", specialty: "Pediatrics" },
-  { id: "d8", name: "Dr. Omar Haddad", specialty: "Psychiatry" },
-  { id: "d9", name: "Dr. Ingrid Berg", specialty: "OB-GYN" },
-  { id: "d10", name: "Dr. Kwame Boateng", specialty: "Gastroenterology" },
-  { id: "d11", name: "Dr. Sofia Rossi", specialty: "Pulmonology" },
-  { id: "d12", name: "Dr. Noah Fischer", specialty: "Ophthalmology" },
-];
+function resolveAvatarUrl(path: string | null | undefined): string | null {
+  if (!path?.trim()) return null;
+  const p = path.trim();
+  if (p.startsWith("http://") || p.startsWith("https://")) return p;
+  if (p.startsWith("/")) return `${env.apiBaseUrl}${p}`;
+  return p;
+}
 
-const DOCTOR_COUNT = DEMO_DOCTORS.length;
+function chatDoctorDisplayName(c: ChatDto): string {
+  const n = `Dr. ${c.doctor_first_name} ${c.doctor_last_name}`.trim();
+  return n || "Doctor";
+}
 
 function initials(name: string): string {
   const parts = name.replace(/^Dr\.\s*/i, "").trim().split(/\s+/);
@@ -234,6 +215,34 @@ function formatMessageTime(ts: number): string {
     minute: "2-digit",
     hour12: true,
   });
+}
+
+function formatMyChatsError(err: unknown): string {
+  if (err instanceof ApiError) {
+    return err.reason ?? err.message;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return "Could not load conversations.";
+}
+
+function NoChatsSidebarCard({ onNavigate }: { onNavigate: () => void }) {
+  return (
+    <li className="flex flex-col items-center gap-3 px-3 py-10 text-center">
+      <p className="text-sm font-medium text-neutral-200">Нет чатов</p>
+      <p className="max-w-[16rem] text-xs leading-relaxed text-neutral-500">
+        Перейдите к списку врачей, чтобы выбрать специалиста и начать переписку.
+      </p>
+      <Link
+        href={routes.patient.doctors}
+        className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:outline-none"
+        onClick={onNavigate}
+      >
+        К списку врачей
+      </Link>
+    </li>
+  );
 }
 
 function ChatDateSeparator({ ts }: { ts: number }) {
@@ -322,15 +331,49 @@ function DoctorAvatar({
 export function DoctorChatWidget() {
   const isOpen = useDoctorChatUiStore((s) => s.isOpen);
   const view = useDoctorChatUiStore((s) => s.view);
-  const selectedDoctorId = useDoctorChatUiStore((s) => s.selectedDoctorId);
-  const threads = useDoctorChatUiStore((s) => s.threads);
+  const selectedChatId = useDoctorChatUiStore((s) => s.selectedChatId);
   const open = useDoctorChatUiStore((s) => s.open);
   const close = useDoctorChatUiStore((s) => s.close);
-  const showDoctorList = useDoctorChatUiStore((s) => s.showDoctorList);
-  const pickDoctor = useDoctorChatUiStore((s) => s.pickDoctor);
-  const appendMessage = useDoctorChatUiStore((s) => s.appendMessage);
+  const showChatList = useDoctorChatUiStore((s) => s.showChatList);
+  const openChat = useDoctorChatUiStore((s) => s.openChat);
   const panelWidthPx = useDoctorChatUiStore((s) => s.panelWidthPx);
   const setPanelWidthPx = useDoctorChatUiStore((s) => s.setPanelWidthPx);
+
+  const hydrated = useIsSessionHydrated();
+  const isAuthenticated = useIsAuthenticated();
+  const currentUser = useCurrentUser();
+
+  const myChatsQuery = useMyChatsQuery(
+    Boolean(isOpen && hydrated && isAuthenticated),
+  );
+
+  const conversations = useMemo(() => {
+    const raw = myChatsQuery.data?.chats ?? [];
+    return [...raw].sort(
+      (a, b) =>
+        new Date(b.last_message_created_at).getTime() -
+        new Date(a.last_message_created_at).getTime(),
+    );
+  }, [myChatsQuery.data]);
+
+  const showNoChatsCard =
+    !myChatsQuery.isPending &&
+    !myChatsQuery.isError &&
+    conversations.length === 0;
+
+  const selectedConversation = useMemo(
+    () => conversations.find((c) => c.id === selectedChatId) ?? null,
+    [conversations, selectedChatId],
+  );
+
+  const chatId = selectedChatId;
+
+  const messagesQuery = useChatMessagesQuery(
+    chatId,
+    Boolean(isOpen && view === "chat" && chatId),
+  );
+
+  const sendMutation = useSendChatMessageMutation(chatId);
 
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -350,12 +393,19 @@ export function DoctorChatWidget() {
     el.style.height = `${next}px`;
   }, []);
 
-  const selectedDoctor = useMemo(
-    () => DEMO_DOCTORS.find((d) => d.id === selectedDoctorId) ?? null,
-    [selectedDoctorId],
-  );
-
-  const lines = selectedDoctorId ? (threads[selectedDoctorId] ?? []) : [];
+  const lines: ChatLine[] = useMemo(() => {
+    if (!messagesQuery.data?.messages || !currentUser?.id) return [];
+    const sorted = [...messagesQuery.data.messages].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+    return sorted.map((m) => ({
+      id: m.id,
+      role: m.sender_user_id === currentUser.id ? "user" : "doctor",
+      body: m.text_content,
+      createdAt: new Date(m.created_at).getTime(),
+    }));
+  }, [messagesQuery.data, currentUser?.id]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -376,21 +426,20 @@ export function DoctorChatWidget() {
     adjustTextareaHeight();
   }, [draft, isOpen, view, adjustTextareaHeight]);
 
-  const send = useCallback(() => {
-    const id = selectedDoctorId;
-    if (!id) return;
+  const send = useCallback(async () => {
     const text = draft.trim();
-    if (!text) return;
-    appendMessage(id, "user", text);
-    setDraft("");
-    window.setTimeout(() => {
-      appendMessage(
-        id,
-        "doctor",
-        "Thanks for the message — I’ll follow up shortly with next steps.",
-      );
-    }, 450);
-  }, [appendMessage, draft, selectedDoctorId]);
+    if (!text || !chatId) return;
+    try {
+      await sendMutation.mutateAsync(text);
+      setDraft("");
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : "Could not send message. Try again.";
+      toast.error(msg);
+    }
+  }, [chatId, draft, sendMutation]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -486,7 +535,7 @@ export function DoctorChatWidget() {
               key="doctor-chat-panel"
               role="dialog"
               aria-modal="true"
-              aria-label="Doctor chat"
+              aria-label="Chats"
               variants={presets.panelVariants}
               initial="hidden"
               animate="visible"
@@ -525,10 +574,23 @@ export function DoctorChatWidget() {
               <>
                 <header className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-800 bg-neutral-950 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold tracking-tight text-neutral-100">Your doctors</p>
-                    <p className="text-xs text-neutral-500">
-                      {DOCTOR_COUNT} {DOCTOR_COUNT === 1 ? "doctor" : "doctors"} · Pick someone to message
+                    <p className="text-sm font-semibold tracking-tight text-neutral-100">
+                      Conversations
                     </p>
+                    <p className="text-xs text-neutral-500">
+                      {isAuthenticated
+                        ? `${conversations.length} ${conversations.length === 1 ? "conversation" : "conversations"} · Messages are saved on the server`
+                        : "Sign in to message your care team"}
+                    </p>
+                    {isAuthenticated ? (
+                      <Link
+                        href={routes.patient.doctors}
+                        className="mt-1 inline-block text-xs font-medium text-emerald-400/90 underline-offset-2 hover:underline"
+                        onClick={close}
+                      >
+                        Find doctors
+                      </Link>
+                    ) : null}
                   </div>
                   <button
                     type="button"
@@ -546,24 +608,64 @@ export function DoctorChatWidget() {
                   initial="hidden"
                   animate="visible"
                 >
-                  {DEMO_DOCTORS.map((doc) => (
-                    <motion.li key={doc.id} variants={presets.listItem}>
-                      <button
-                        type="button"
-                        onClick={() => pickDoctor(doc.id)}
-                        className="flex w-full items-center gap-3 rounded-xl border border-transparent bg-neutral-900/50 px-3 py-2.5 text-left transition hover:border-neutral-700 hover:bg-neutral-800/80 focus-visible:ring-2 focus-visible:ring-emerald-500/25 focus-visible:outline-none"
+                  {!hydrated ? (
+                    <li className="flex justify-center py-8 text-sm text-neutral-500">
+                      <Loader2 className="size-6 animate-spin text-neutral-400" aria-hidden />
+                    </li>
+                  ) : !isAuthenticated ? (
+                    <li className="rounded-xl border border-neutral-800 bg-neutral-900/40 px-3 py-4 text-center text-sm text-neutral-400">
+                      <Link
+                        href={routes.login}
+                        className="font-medium text-emerald-400 underline-offset-2 hover:underline"
+                        onClick={close}
                       >
-                        <DoctorAvatar name={doc.name} avatarUrl={doc.avatarUrl} sizeClass="size-11" />
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium text-neutral-100">{doc.name}</span>
-                          <span className="flex items-center gap-1 truncate text-xs text-neutral-500">
-                            <Stethoscope className="size-3.5 shrink-0 text-neutral-600" aria-hidden />
-                            {doc.specialty}
-                          </span>
-                        </span>
-                      </button>
-                    </motion.li>
-                  ))}
+                        Sign in
+                      </Link>{" "}
+                      to open chats with doctors.
+                    </li>
+                  ) : myChatsQuery.isPending ? (
+                    <li className="flex justify-center py-8">
+                      <Loader2 className="size-6 animate-spin text-neutral-400" aria-hidden />
+                    </li>
+                  ) : myChatsQuery.isError ? (
+                    <li className="rounded-xl border border-red-900/50 bg-red-950/20 px-3 py-3 text-sm text-red-200/90">
+                      {formatMyChatsError(myChatsQuery.error)}
+                    </li>
+                  ) : showNoChatsCard ? (
+                    <NoChatsSidebarCard onNavigate={close} />
+                  ) : (
+                    conversations.map((c) => {
+                      const name = chatDoctorDisplayName(c);
+                      const avatarUrl = resolveAvatarUrl(c.doctor_avatar_path);
+                      const lastAt = new Date(c.last_message_created_at);
+                      const lastLabel = formatDistanceToNow(lastAt, {
+                        addSuffix: true,
+                      });
+                      return (
+                        <motion.li key={c.id} variants={presets.listItem}>
+                          <button
+                            type="button"
+                            onClick={() => openChat(c.id)}
+                            className="flex w-full items-center gap-3 rounded-xl border border-transparent bg-neutral-900/50 px-3 py-2.5 text-left transition hover:border-neutral-700 hover:bg-neutral-800/80 focus-visible:ring-2 focus-visible:ring-emerald-500/25 focus-visible:outline-none"
+                          >
+                            <DoctorAvatar
+                              name={name}
+                              avatarUrl={avatarUrl}
+                              sizeClass="size-11"
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-medium text-neutral-100">
+                                {name}
+                              </span>
+                              <span className="block truncate text-xs text-neutral-500">
+                                {lastLabel}
+                              </span>
+                            </span>
+                          </button>
+                        </motion.li>
+                      );
+                    })
+                  )}
                 </motion.ul>
               </>
             ) : (
@@ -571,25 +673,36 @@ export function DoctorChatWidget() {
                 <header className="flex shrink-0 items-center gap-2 border-b border-neutral-800 bg-neutral-950 px-2 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-3">
                   <button
                     type="button"
-                    onClick={showDoctorList}
+                    onClick={showChatList}
                     className="inline-flex size-9 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
-                    aria-label="Back to doctor list"
+                    aria-label="Back to conversations"
                   >
                     <ChevronLeft className="size-5" aria-hidden />
                   </button>
-                  {selectedDoctor ? (
+                  {selectedConversation ? (
                     <DoctorAvatar
-                      name={selectedDoctor.name}
-                      avatarUrl={selectedDoctor.avatarUrl}
+                      name={chatDoctorDisplayName(selectedConversation)}
+                      avatarUrl={resolveAvatarUrl(
+                        selectedConversation.doctor_avatar_path,
+                      )}
                       sizeClass="size-9"
                     />
                   ) : null}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-neutral-100">
-                      {selectedDoctor?.name ?? "Doctor"}
+                      {selectedConversation
+                        ? chatDoctorDisplayName(selectedConversation)
+                        : "Doctor"}
                     </p>
                     <p className="truncate text-xs text-neutral-500">
-                      {selectedDoctor?.specialty ?? ""}
+                      {selectedConversation
+                        ? formatDistanceToNow(
+                            new Date(
+                              selectedConversation.last_message_created_at,
+                            ),
+                            { addSuffix: true },
+                          )
+                        : ""}
                     </p>
                   </div>
                   <button
@@ -606,9 +719,17 @@ export function DoctorChatWidget() {
                   ref={listRef}
                   className="scrollbar-none min-h-0 flex-1 space-y-3 overflow-y-auto bg-neutral-950 px-3 py-3"
                 >
-                  {lines.length === 0 ? (
+                  {messagesQuery.isPending ? (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="size-7 animate-spin text-neutral-500" aria-hidden />
+                    </div>
+                  ) : messagesQuery.isError ? (
+                    <p className="text-sm text-red-300/90">
+                      Could not load messages.
+                    </p>
+                  ) : lines.length === 0 ? (
                     <p className="text-sm text-neutral-500">
-                      Say hello — your messages are saved for this visit preview.
+                      No messages yet — say hello. Your conversation is stored securely.
                     </p>
                   ) : (
                     lines.map((m, i) => {
@@ -639,23 +760,30 @@ export function DoctorChatWidget() {
                       onChange={(e) => setDraft(e.target.value)}
                       placeholder="Message"
                       rows={1}
-                      className="scrollbar-none min-h-0 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-left text-[15px] leading-5 text-neutral-100 placeholder:text-neutral-500 focus:outline-none"
+                      disabled={!chatId || sendMutation.isPending}
+                      className="scrollbar-none min-h-0 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-left text-[15px] leading-5 text-neutral-100 placeholder:text-neutral-500 focus:outline-none disabled:opacity-50"
                       style={{ height: CHAT_INPUT_MIN_H, maxHeight: CHAT_INPUT_MAX_H }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
-                          send();
+                          void send();
                         }
                       }}
                     />
                     <button
                       type="button"
-                      onClick={send}
-                      disabled={!draft.trim()}
+                      onClick={() => void send()}
+                      disabled={
+                        !draft.trim() || !chatId || sendMutation.isPending
+                      }
                       className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:outline-none"
                       aria-label="Send message"
                     >
-                      <ArrowUp className="size-4" aria-hidden />
+                      {sendMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden />
+                      ) : (
+                        <ArrowUp className="size-4" aria-hidden />
+                      )}
                     </button>
                   </div>
                 </footer>
