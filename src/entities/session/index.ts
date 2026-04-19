@@ -23,4 +23,6 @@ export { meQueryOptions } from "./api/session.queries";
 export { RequireAuth } from "./ui/require-auth";
 export { RequireRole } from "./ui/require-role";
 export { RequireAnyAdmin } from "./ui/require-any-admin";
+export { RequireOrgAdmin } from "./ui/require-org-admin";
+export { RequirePlatformAdmin } from "./ui/require-platform-admin";
 export { RedirectIfAuthenticated } from "./ui/redirect-if-authenticated";

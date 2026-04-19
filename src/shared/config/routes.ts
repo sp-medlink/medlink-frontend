@@ -38,10 +38,15 @@ export const routes = {
    */
   admin: {
     root: "/admin",
-    verifications: "/admin/verifications",
+    /** Platform admin + org-admin. Scope differs per capability. */
     organizations: "/admin/organizations",
+    /** Dept-admin landing; others drill in via an organization. */
     departments: "/admin/departments",
-    auditLogs: "/admin/audit-logs",
-    moderation: "/admin/moderation",
+    /** Platform-admin-only: manage the `admin` base role. */
+    admins: "/admin/admins",
+    /** Platform-admin-only: every registered user (operator oversight). */
+    users: "/admin/users",
+    /** Platform-admin-only: doctor verification queue + audit trail. */
+    verifications: "/admin/verifications",
   },
 } as const;

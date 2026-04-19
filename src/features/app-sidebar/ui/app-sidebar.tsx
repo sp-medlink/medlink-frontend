@@ -27,10 +27,9 @@ export function AppSidebar({ area, expanded, onToggle }: AppSidebarProps) {
   const pathname = usePathname();
   const user = useCurrentUser();
   const caps = useAdminCapabilities();
-  // Inject the "Admin" shortcut into patient/doctor sidebars for users who
-  // hold admin capability through data ownership (org-admins / dept-admins)
-  // rather than the platform `admin` base role.
-  const items = getNavItems(area, { isAnyAdmin: caps.anyAdmin });
+  // Admin shortcut in patient/doctor sidebars + capability-gated items in the
+  // admin sidebar are all driven by the same capability bag.
+  const items = getNavItems(area, { caps });
 
   const displayName = user
     ? [user.firstName, user.lastName].filter(Boolean).join(" ")

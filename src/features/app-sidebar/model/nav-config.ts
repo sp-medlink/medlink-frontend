@@ -4,24 +4,23 @@ import {
   Building2,
   Calendar,
   CalendarClock,
-  ClipboardList,
   FileText,
-  Flag,
   FolderOpen,
   GitBranch,
   Hospital,
   LayoutDashboard,
   MessageSquare,
   Pill,
-  ScrollText,
   Search,
   Settings,
   ShieldCheck,
   UserCog,
   UserRound,
+  Users,
   Video,
 } from "lucide-react";
 
+import type { AdminCapabilities } from "@/entities/session";
 import type { AppRole } from "@/shared/config";
 import { routes } from "@/shared/config";
 
@@ -44,11 +43,14 @@ export interface NavItem {
 
 export interface NavOptions {
   /**
-   * If true, an "Admin" entry is injected into the patient/doctor sidebars
-   * so users who hold an admin capability (org-admin, dept-admin, …) without
-   * the platform `admin` base role can still discover the admin area.
+   * Admin capabilities for the current user. Drives two things:
+   *   1. Injection of the "Admin" shortcut into patient/doctor sidebars for
+   *      users who hold admin capability via data ownership (org/dept-admin)
+   *      rather than the platform `admin` base role.
+   *   2. Which items appear in the admin-area sidebar (platform admin sees
+   *      Organizations + Admins; dept-admin sees Departments; etc.).
    */
-  isAnyAdmin?: boolean;
+  caps?: AdminCapabilities;
 }
 
 export function getSidebarAreaFromPath(pathname: string): SidebarArea | null {
@@ -81,6 +83,8 @@ export function resolveSidebarAreaFromAppRole(
 }
 
 export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[] {
+  const caps = opts.caps;
+  const isAnyAdmin = caps?.anyAdmin ?? false;
   const adminLink: NavItem = {
     href: routes.admin.root,
     label: "Admin",
@@ -132,7 +136,7 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
           icon: Bell,
         },
       ];
-      if (opts.isAnyAdmin) items.push(adminLink);
+      if (isAnyAdmin) items.push(adminLink);
       items.push({
         href: routes.settings,
         label: "Profile & settings",
@@ -189,7 +193,7 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
           icon: Hospital,
         },
       ];
-      if (opts.isAnyAdmin) items.push(adminLink);
+      if (isAnyAdmin) items.push(adminLink);
       items.push({
         href: routes.settings,
         label: "Profile & settings",
@@ -197,45 +201,64 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
       });
       return items;
     }
-    case "admin":
-      return [
+    case "admin": {
+      // Before caps resolve we conservatively show only Overview + Settings to
+      // avoid flashing items the user can't actually reach.
+      const platform = caps?.platform ?? false;
+      const anyOrg = caps?.anyOrg ?? false;
+      const anyDept = caps?.anyDept ?? false;
+
+      const items: NavItem[] = [
         {
           href: routes.admin.root,
           label: "Overview",
           icon: LayoutDashboard,
           match: "exact",
         },
-        {
-          href: routes.admin.verifications,
-          label: "Doctor verifications",
-          icon: ClipboardList,
-        },
-        {
+      ];
+      if (platform || anyOrg) {
+        items.push({
           href: routes.admin.organizations,
           label: "Organizations",
           icon: Building2,
-        },
-        {
+        });
+      }
+      // Dept-admins without org-admin context land directly on depts; platform
+      // and org-admins reach depts by drilling through an organization, so we
+      // don't give them a competing top-level link.
+      if (anyDept && !platform && !anyOrg) {
+        items.push({
           href: routes.admin.departments,
           label: "Departments",
           icon: GitBranch,
-        },
-        {
-          href: routes.admin.auditLogs,
-          label: "Audit logs",
-          icon: ScrollText,
-        },
-        {
-          href: routes.admin.moderation,
-          label: "Moderation",
-          icon: Flag,
-        },
-        {
-          href: routes.settings,
-          label: "Profile & settings",
-          icon: Settings,
-        },
-      ];
+        });
+      }
+      if (platform) {
+        items.push(
+          {
+            href: routes.admin.verifications,
+            label: "Doctor verifications",
+            icon: ShieldCheck,
+          },
+          {
+            href: routes.admin.users,
+            label: "Users",
+            icon: Users,
+          },
+          {
+            href: routes.admin.admins,
+            label: "Platform admins",
+            icon: UserCog,
+          },
+        );
+      }
+      items.push({
+        href: routes.settings,
+        label: "Profile & settings",
+        icon: Settings,
+      });
+      return items;
+    }
     default:
       return [];
   }
