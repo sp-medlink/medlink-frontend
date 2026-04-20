@@ -83,6 +83,9 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
 
   switch (area) {
     case "patient": {
+      // Minimalist sidebar — patient home (HomeLandingView) surfaces
+      // the per-feature quick links. Keeping the sidebar lean mirrors
+      // the doctor area's tabbed-workspace philosophy.
       const items: NavItem[] = [
         {
           href: routes.patient.root,
@@ -105,6 +108,9 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
       return items;
     }
     case "doctor": {
+      // Doctor home is now a tabbed workspace that contains
+      // Verification / Departments / Schedule / Appointments inline,
+      // so the sidebar is deliberately lean.
       const items: NavItem[] = [
         {
           href: routes.doctor.root,

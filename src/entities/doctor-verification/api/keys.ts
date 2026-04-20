@@ -6,4 +6,6 @@ export const doctorVerificationKeys = {
     [...doctorVerificationKeys.all(), "list", status] as const,
   detail: (doctorId: string) =>
     [...doctorVerificationKeys.all(), "detail", doctorId] as const,
+  /** Caller's own verification record. */
+  mine: () => [...doctorVerificationKeys.all(), "mine"] as const,
 } as const;

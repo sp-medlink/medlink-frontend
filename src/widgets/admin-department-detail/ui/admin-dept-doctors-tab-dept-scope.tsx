@@ -1,13 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, UserRound } from "lucide-react";
+import { Clock, Loader2, Star, UserRound } from "lucide-react";
 
-import { doctorDepartmentsAsDeptAdminQuery } from "@/entities/doctor";
+import {
+  doctorDepartmentsAsDeptAdminQuery,
+  type DoctorDepartment,
+} from "@/entities/doctor";
 import {
   DoctorDeptActiveToggle,
   DoctorDeptRemoveButton,
 } from "@/features/admin-doctor-dept-crud";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
 import {
   Card,
@@ -27,6 +31,18 @@ import {
 
 interface AdminDeptDoctorsTabDeptScopeProps {
   deptId: string;
+}
+
+function initialsOf(row: DoctorDepartment): string {
+  const a = row.firstName?.[0] ?? "";
+  const b = row.lastName?.[0] ?? "";
+  const joined = `${a}${b}`.toUpperCase();
+  return joined || "?";
+}
+
+function displayNameOf(row: DoctorDepartment): string {
+  const full = [row.firstName, row.lastName].filter(Boolean).join(" ");
+  return full || row.position || row.id;
 }
 
 /**
@@ -62,59 +78,94 @@ export function AdminDeptDoctorsTabDeptScope({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Position</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Doctor ID
+                  <TableHead>Doctor</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Position
                   </TableHead>
+                  <TableHead className="hidden lg:table-cell">Slot</TableHead>
+                  <TableHead className="hidden lg:table-cell">Rating</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Active</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {query.data.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {row.position || "—"}
-                        </span>
-                        {row.description ? (
-                          <span className="text-muted-foreground text-xs">
-                            {row.description}
+                {query.data.map((row) => {
+                  const name = displayNameOf(row);
+                  return (
+                    <TableRow key={row.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="size-9">
+                            <AvatarImage
+                              src={row.avatarPath || undefined}
+                              alt=""
+                            />
+                            <AvatarFallback>{initialsOf(row)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex min-w-0 flex-col">
+                            <span className="truncate text-sm font-medium">
+                              {name}
+                            </span>
+                            {row.education ? (
+                              <span className="text-muted-foreground truncate text-xs">
+                                {row.education}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex flex-col">
+                          <span className="text-sm">
+                            {row.position || "—"}
                           </span>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden font-mono text-xs sm:table-cell">
-                      {row.doctorId}
-                    </TableCell>
-                    <TableCell>
-                      {row.isDeptAdmin ? (
-                        <Badge variant="default">Dept-admin</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">
-                          Doctor
+                          {row.description ? (
+                            <span className="text-muted-foreground line-clamp-1 text-xs">
+                              {row.description}
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                          <Clock className="size-3" aria-hidden />
+                          {row.apptDurationInMinutes} min
                         </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <DoctorDeptActiveToggle
-                        deptId={deptId}
-                        docDeptId={row.id}
-                        isActive={row.isActive}
-                        doctorName={row.position || undefined}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DoctorDeptRemoveButton
-                        deptId={deptId}
-                        docDeptId={row.id}
-                        doctorLabel={row.position || "this doctor"}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                          <Star className="size-3" aria-hidden />
+                          {row.rating > 0 ? row.rating.toFixed(1) : "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {row.isDeptAdmin ? (
+                          <Badge variant="default">Dept-admin</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">
+                            Doctor
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DoctorDeptActiveToggle
+                          deptId={deptId}
+                          docDeptId={row.id}
+                          isActive={row.isActive}
+                          doctorName={name}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DoctorDeptRemoveButton
+                          deptId={deptId}
+                          docDeptId={row.id}
+                          doctorLabel={name}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

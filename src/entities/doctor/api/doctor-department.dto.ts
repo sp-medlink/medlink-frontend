@@ -1,6 +1,26 @@
+/**
+ * Union DTO for the three `doctor_departments` surfaces:
+ *
+ *   - `/user/org-admin/...`  → `doctor_department_id`, `user_id`, + full
+ *                              doctor profile (name, avatar, education,
+ *                              experience) and `department_name`/`organization_name`.
+ *   - `/user/dept-admin/...` → same as org-admin minus `user_id`.
+ *   - `/user/doctor/departments` → legacy shape: `id`, `doctor_id`, no
+ *                                  user profile fields.
+ *
+ * We normalise in the mapper, so consumers always get `id` / `doctorId`
+ * and the enrichment fields come through as optional.
+ */
 export interface DoctorDepartmentDto {
-  id: string;
-  doctor_id: string;
+  id?: string;
+  doctor_department_id?: string;
+  doctor_id?: string;
+  user_id?: string;
+  avatar_path?: string;
+  first_name?: string;
+  last_name?: string;
+  education?: string;
+  experience?: string;
   department_id: string;
   department_name?: string;
   organization_id?: string;

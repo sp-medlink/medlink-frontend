@@ -1,11 +1,11 @@
 "use client";
 
-import { DoctorChatPageWidget } from "@/features/doctor-chat/ui/doctor-chat-page-widget";
+import { ChatPageWidget } from "@/features/doctor-chat/ui/chat-page-widget";
 
 export function DoctorChatsView() {
   return (
     <div className="flex w-full min-h-0 flex-1 flex-col">
-      <DoctorChatPageWidget />
+      <ChatPageWidget />
     </div>
   );
 }

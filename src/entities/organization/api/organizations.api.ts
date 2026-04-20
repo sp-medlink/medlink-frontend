@@ -36,6 +36,14 @@ export async function fetchOrganizations(
   }
 }
 
+/**
+ * Fetches a single org by id.
+ *
+ * Goes through `/user/org-admin/*`. The service-layer ownership check
+ * accepts both org-admins (via an `orgs_admins` row) and platform
+ * admins (via the `admin` base role), so this is the right path for
+ * every admin surface — no scope split needed.
+ */
 export async function fetchOrganization(orgId: string): Promise<Organization> {
   const res = await apiFetch<OrganizationResponse>(
     `/user/org-admin/organizations/${orgId}`,

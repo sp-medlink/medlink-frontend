@@ -4,6 +4,7 @@ import type { VerificationStatus } from "../model/types";
 import {
   fetchDoctorVerification,
   fetchDoctorVerifications,
+  fetchMyVerification,
 } from "./verifications.api";
 import { doctorVerificationKeys } from "./keys";
 
@@ -22,4 +23,11 @@ export const doctorVerificationDetailQuery = (doctorId: string) =>
     queryFn: () => fetchDoctorVerification(doctorId),
     staleTime: 15_000,
     enabled: !!doctorId,
+  });
+
+export const myDoctorVerificationQuery = () =>
+  queryOptions({
+    queryKey: doctorVerificationKeys.mine(),
+    queryFn: fetchMyVerification,
+    staleTime: 15_000,
   });

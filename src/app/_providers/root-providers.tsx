@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 
 import { ChatDockGate } from "@/features/doctor-chat/ui/chat-dock-gate";
 import { ChatInboxPrefetch } from "@/features/doctor-chat/ui/chat-inbox-prefetch";
+import { ChatNotifications } from "@/features/doctor-chat/ui/chat-notifications";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { QueryProvider } from "./query-provider";
 import { ApiClientBootstrap } from "./api-client-bootstrap";
@@ -15,6 +16,7 @@ export function RootProviders({ children }: { children: ReactNode }) {
       <ApiClientBootstrap>
         <TooltipProvider delayDuration={200}>
           <ChatInboxPrefetch />
+          <ChatNotifications />
           {children}
           <ChatDockGate />
           <Toaster position="top-right" richColors closeButton />

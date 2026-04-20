@@ -28,3 +28,24 @@ export interface RejectVerificationBody {
 export interface RevokeVerificationBody {
   reason: string;
 }
+
+export interface MyVerificationDto {
+  verification_status: string;
+  license_number: string;
+  license_country: string;
+  license_issued_at: string | null;
+  license_expires_at: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  rejection_reason: string;
+  submitted_at: string;
+}
+
+export interface SubmitMyVerificationBody {
+  education: string;
+  experience: string;
+  license_number: string;
+  license_country: string;
+  license_issued_at: string;
+  license_expires_at: string;
+}

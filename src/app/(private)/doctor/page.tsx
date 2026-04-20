@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import {
   BadgeCheck,
   CalendarClock,
@@ -9,6 +10,7 @@ import {
   Layers3,
   ShieldCheck,
 } from "lucide-react";
+
 import { useCurrentUser } from "@/entities/session";
 import { myDoctorDepartmentsOptions, myDoctorProfileOptions } from "@/entities/doctor";
 import { appointmentKeys, fetchDoctorAppointments } from "@/entities/appointment";
@@ -16,6 +18,7 @@ import { DoctorAppointmentsView } from "@/features/doctor-appointments/ui/doctor
 import { DoctorDepartmentsView } from "@/features/doctor-departments/ui/doctor-departments-view";
 import { DoctorScheduleView } from "@/features/doctor-schedule/ui/doctor-schedule-view";
 import { DoctorVerificationView } from "@/features/doctor-verification/ui/doctor-verification-view";
+import { routes } from "@/shared/config";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
@@ -58,19 +61,53 @@ function formatTime(value: string): string {
   }).format(d);
 }
 
+/**
+ * Doctor workspace. Single home surface that embeds the four core
+ * doctor flows — verification, departments, schedule, appointments —
+ * behind a tab bar so the sidebar can stay lean.
+ *
+ * Plain users (role=`user`, no doctor row yet) are bounced to the
+ * verification onboarding page before any of the doctor queries fire.
+ */
 export default function DoctorHomePage() {
-  const [homeTab, setHomeTab] = useState("appointments");
   const user = useCurrentUser();
-  const profile = useQuery(myDoctorProfileOptions());
-  const departments = useQuery(myDoctorDepartmentsOptions());
+  const router = useRouter();
+  const isDoctor = !!user?.roles.includes("doctor");
+
+  // Must run every render — hooks order is critical. Gate the effect,
+  // not the hook.
+  useEffect(() => {
+    if (user && !isDoctor) {
+      router.replace(routes.doctor.verification);
+    }
+  }, [user, isDoctor, router]);
+
+  const [homeTab, setHomeTab] = useState("appointments");
+
+  // Disable the doctor-only queries while we're waiting on the
+  // redirect — otherwise the profile endpoint 403s a plain user on
+  // every render.
+  const profile = useQuery({
+    ...myDoctorProfileOptions(),
+    enabled: isDoctor,
+  });
+  const departments = useQuery({
+    ...myDoctorDepartmentsOptions(),
+    enabled: isDoctor,
+  });
+
   const list = departments.data ?? [];
   const activeList = list.filter((d) => d.isActive);
   const selectedDept = activeList[0] ?? list[0] ?? null;
+
   const appointments = useQuery({
     queryKey: [...appointmentKeys.list(), "doctor-dashboard", selectedDept?.id ?? ""],
     queryFn: () => fetchDoctorAppointments(selectedDept!.id),
-    enabled: Boolean(selectedDept?.id),
+    enabled: Boolean(isDoctor && selectedDept?.id),
   });
+
+  if (!user) return null;
+  if (!isDoctor) return null;
 
   const deptAppointments = appointments.data ?? [];
   const queue = deptAppointments.slice(0, 7);

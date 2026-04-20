@@ -17,10 +17,11 @@ import { doctorChatKeys } from "../api/query-keys";
 import { CHAT_INBOX_STALE_MS } from "../model/use-doctor-chat-queries";
 
 /**
- * Warms inbox data and the doctor-chat widget JS chunk as soon as the session
- * is ready. On /patient|doctor/chats the dock is not mounted (ChatDockGate
- * returns null), so without this preload the chat page pays a cold chunk load;
- * browsing other routes loads the dock via dynamic() and the chunk is already warm.
+ * Warms inbox data and the chat widget JS chunk as soon as the session
+ * is ready. On /patient|doctor/chats the dock is not mounted
+ * (ChatDockGate returns null), so without this preload the chat page
+ * pays a cold chunk load; browsing other routes loads the dock via
+ * dynamic() and the chunk is already warm.
  */
 export function ChatInboxPrefetch() {
   const qc = useQueryClient();
@@ -32,7 +33,7 @@ export function ChatInboxPrefetch() {
     if (!hydrated || !isAuthenticated) return;
     if (appRole !== "doctor" && appRole !== "patient") return;
 
-    void import("./doctor-chat-widget");
+    void import("./chat-widget");
 
     void qc.prefetchQuery({
       queryKey: doctorChatKeys.inbox(appRole),

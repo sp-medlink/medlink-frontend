@@ -1,5 +1,9 @@
-import type { DoctorVerification, VerificationStatus } from "../model/types";
-import type { DoctorVerificationDto } from "./dto";
+import type {
+  DoctorVerification,
+  MyVerification,
+  VerificationStatus,
+} from "../model/types";
+import type { DoctorVerificationDto, MyVerificationDto } from "./dto";
 
 function toStatus(raw: string): VerificationStatus {
   switch (raw) {
@@ -31,6 +35,20 @@ export function toDoctorVerification(
     licenseIssuedAt: api.license_issued_at,
     licenseExpiresAt: api.license_expires_at,
     verificationStatus: toStatus(api.verification_status),
+    verifiedBy: api.verified_by,
+    verifiedAt: api.verified_at,
+    rejectionReason: api.rejection_reason,
+    submittedAt: api.submitted_at,
+  };
+}
+
+export function toMyVerification(api: MyVerificationDto): MyVerification {
+  return {
+    verificationStatus: toStatus(api.verification_status),
+    licenseNumber: api.license_number,
+    licenseCountry: api.license_country,
+    licenseIssuedAt: api.license_issued_at,
+    licenseExpiresAt: api.license_expires_at,
     verifiedBy: api.verified_by,
     verifiedAt: api.verified_at,
     rejectionReason: api.rejection_reason,

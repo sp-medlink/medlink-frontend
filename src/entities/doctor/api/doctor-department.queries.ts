@@ -32,3 +32,7 @@ export const myDoctorDepartmentsQuery = () =>
     queryFn: fetchMyDoctorDepartments,
     staleTime: 30_000,
   });
+
+// Alias for callers that prefer the `*Options` naming convention
+// used elsewhere in the codebase.
+export const myDoctorDepartmentsOptions = myDoctorDepartmentsQuery;

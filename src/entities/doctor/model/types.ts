@@ -33,4 +33,15 @@ export interface DoctorDepartment {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Enrichment fields present on org-admin and dept-admin listings —
+   * absent on the doctor's own self-serve listing. UI renders
+   * gracefully when these are missing.
+   */
+  userId?: string;
+  avatarPath?: string;
+  firstName?: string;
+  lastName?: string;
+  education?: string;
+  experience?: string;
 }

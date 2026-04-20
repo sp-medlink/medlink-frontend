@@ -3,14 +3,12 @@
 import dynamic from "next/dynamic";
 
 /**
- * Same dynamic chunk as {@link ChatDockGate}'s DoctorChatWidget so
- * ChatInboxPrefetch's `import("…/doctor-chat-widget")` warms this module.
- * Static import in route pages would load a separate graph and skip the dock
- * preload on direct /patient|doctor/chats visits.
+ * Page surface for /patient/chats and /doctor/chats. Shares the same
+ * dynamic chunk as {@link ChatDockGate}'s widget so the inbox-prefetch
+ * warmup covers both entry points with a single import graph.
  */
-const DoctorChatWidget = dynamic(
-  () =>
-    import("./doctor-chat-widget").then((m) => m.DoctorChatWidget),
+const ChatWidget = dynamic(
+  () => import("./chat-widget").then((m) => m.ChatWidget),
   {
     ssr: false,
     loading: () => (
@@ -36,6 +34,6 @@ const DoctorChatWidget = dynamic(
   },
 );
 
-export function DoctorChatPageWidget() {
-  return <DoctorChatWidget variant="page" />;
+export function ChatPageWidget() {
+  return <ChatWidget variant="page" />;
 }
