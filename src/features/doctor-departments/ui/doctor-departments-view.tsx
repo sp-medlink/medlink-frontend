@@ -5,10 +5,10 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  deleteDoctorDepartment,
   doctorDepartmentKeys,
   myDoctorDepartmentsOptions,
-  setDoctorDepartmentActive,
+  removeDoctorFromDepartment,
+  setDoctorDeptActive,
 } from "@/entities/doctor";
 import { ApiError } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
@@ -19,14 +19,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/utils";
 
-export function DoctorDepartmentsView() {
+interface DoctorDepartmentsViewProps {
+  embedded?: boolean;
+}
+
+export function DoctorDepartmentsView({ embedded = false }: DoctorDepartmentsViewProps) {
   const qc = useQueryClient();
   const q = useQuery(myDoctorDepartmentsOptions());
+  const showHeader = !embedded;
 
   const toggle = useMutation({
-    mutationFn: (p: { id: string; active: boolean }) =>
-      setDoctorDepartmentActive(p.id, p.active),
+    mutationFn: (p: { id: string; deptId: string; active: boolean }) =>
+      setDoctorDeptActive(p.deptId, p.id, p.active),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: doctorDepartmentKeys.all() });
     },
@@ -36,7 +42,8 @@ export function DoctorDepartmentsView() {
   });
 
   const del = useMutation({
-    mutationFn: (id: string) => deleteDoctorDepartment(id),
+    mutationFn: (p: { id: string; deptId: string }) =>
+      removeDoctorFromDepartment(p.deptId, p.id),
     onSuccess: () => {
       toast.success("Profile removed");
       void qc.invalidateQueries({ queryKey: doctorDepartmentKeys.all() });
@@ -47,13 +54,20 @@ export function DoctorDepartmentsView() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Departments</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Per-department profiles: status and removal.
-        </p>
-      </header>
+    <main
+      className={cn(
+        "mx-auto flex w-full flex-col gap-6",
+        embedded ? "max-w-none p-4 sm:p-5" : "min-h-screen max-w-3xl p-6",
+      )}
+    >
+      {showHeader ? (
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight">Departments</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Per-department profiles: status and removal.
+          </p>
+        </header>
+      ) : null}
 
       {q.isPending ? (
         <Loader2 className="size-8 animate-spin" />
@@ -75,7 +89,11 @@ export function DoctorDepartmentsView() {
                   size="sm"
                   variant="secondary"
                   onClick={() =>
-                    toggle.mutate({ id: d.id, active: !d.isActive })
+                    toggle.mutate({
+                      id: d.id,
+                      deptId: d.departmentId,
+                      active: !d.isActive,
+                    })
                   }
                 >
                   {d.isActive ? "Deactivate" : "Activate"}
@@ -90,7 +108,7 @@ export function DoctorDepartmentsView() {
                         "Remove your profile in this department?",
                       )
                     ) {
-                      del.mutate(d.id);
+                      del.mutate({ id: d.id, deptId: d.departmentId });
                     }
                   }}
                 >

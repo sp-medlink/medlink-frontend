@@ -1,5 +1,6 @@
-import { DoctorAppointmentsView } from "@/features/doctor-appointments/ui/doctor-appointments-view";
+import { redirect } from "next/navigation";
+import { routes } from "@/shared/config";
 
 export default function DoctorAppointmentsPage() {
-  return <DoctorAppointmentsView />;
+  redirect(routes.doctor.root);
 }

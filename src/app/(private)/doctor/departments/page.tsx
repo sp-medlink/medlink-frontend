@@ -1,5 +1,6 @@
-import { DoctorDepartmentsView } from "@/features/doctor-departments/ui/doctor-departments-view";
+import { redirect } from "next/navigation";
+import { routes } from "@/shared/config";
 
 export default function DoctorDepartmentsPage() {
-  return <DoctorDepartmentsView />;
+  redirect(routes.doctor.root);
 }

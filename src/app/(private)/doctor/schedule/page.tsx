@@ -1,5 +1,6 @@
-import { DoctorScheduleView } from "@/features/doctor-schedule/ui/doctor-schedule-view";
+import { redirect } from "next/navigation";
+import { routes } from "@/shared/config";
 
 export default function DoctorSchedulePage() {
-  return <DoctorScheduleView />;
+  redirect(routes.doctor.root);
 }

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { myDoctorDepartmentsOptions } from "@/entities/doctor";
@@ -24,6 +24,7 @@ import {
 } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { cn } from "@/shared/lib/utils";
 
 const WD: { v: number; l: string }[] = [
   { v: 1, l: "Mon" },
@@ -41,9 +42,14 @@ function toTimePayload(raw: string): string {
   return t;
 }
 
-export function DoctorScheduleView() {
+interface DoctorScheduleViewProps {
+  embedded?: boolean;
+}
+
+export function DoctorScheduleView({ embedded = false }: DoctorScheduleViewProps) {
   const qc = useQueryClient();
   const depts = useQuery(myDoctorDepartmentsOptions());
+  const showHeader = !embedded;
   const [docDeptId, setDocDeptId] = useState<string | null>(null);
   const schedule = useQuery({
     ...doctorScheduleOptions(docDeptId ?? ""),
@@ -92,32 +98,29 @@ export function DoctorScheduleView() {
     },
   });
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Schedule</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Active slots are available for patients to book.
-        </p>
-      </header>
+  useEffect(() => {
+    if (docDeptId) return;
+    const first = (depts.data ?? []).find((d) => d.isActive) ?? depts.data?.[0];
+    if (first) setDocDeptId(first.id);
+  }, [docDeptId, depts.data]);
 
-      {depts.isPending ? (
-        <Loader2 className="size-8 animate-spin" />
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {(depts.data ?? []).map((d) => (
-            <Button
-              key={d.id}
-              type="button"
-              variant={docDeptId === d.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDocDeptId(d.id)}
-            >
-              {d.departmentName}
-            </Button>
-          ))}
-        </div>
+  return (
+    <main
+      className={cn(
+        "mx-auto flex w-full flex-col gap-6",
+        embedded ? "max-w-none p-4 sm:p-5" : "min-h-screen max-w-3xl p-6",
       )}
+    >
+      {showHeader ? (
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight">Schedule</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Active slots are available for patients to book.
+          </p>
+        </header>
+      ) : null}
+
+      {depts.isPending ? <Loader2 className="size-8 animate-spin" /> : null}
 
       {docDeptId ? (
         <Card>

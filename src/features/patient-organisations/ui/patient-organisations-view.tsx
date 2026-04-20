@@ -11,6 +11,10 @@ import { env, patientOrganisationPath } from "@/shared/config";
 import { Input } from "@/shared/ui/input";
 import { cn } from "@/shared/lib/utils";
 
+interface PatientOrganisationsViewProps {
+  embedded?: boolean;
+}
+
 function orgAvatarUrl(path: string | null | undefined): string | null {
   if (!path?.trim()) return null;
   const p = path.trim();
@@ -19,8 +23,9 @@ function orgAvatarUrl(path: string | null | undefined): string | null {
   return p;
 }
 
-export function PatientOrganisationsView() {
+export function PatientOrganisationsView({ embedded = false }: PatientOrganisationsViewProps) {
   const [q, setQ] = useState("");
+  const showHeader = !embedded;
   const orgsQuery = useQuery({
     queryKey: ["patient-organisations", "list"],
     queryFn: fetchOrganizations,
@@ -38,13 +43,20 @@ export function PatientOrganisationsView() {
   }, [organizations, q]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 p-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Organizations</h1>
-        <p className="text-muted-foreground text-sm">
-          Search by name. All organizations available in the directory.
-        </p>
-      </header>
+    <main
+      className={cn(
+        "mx-auto flex w-full flex-col gap-6",
+        embedded ? "max-w-none p-4 sm:p-5" : "min-h-screen max-w-6xl p-6",
+      )}
+    >
+      {showHeader ? (
+        <header className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Organizations</h1>
+          <p className="text-muted-foreground text-sm">
+            Search by name. All organizations available in the directory.
+          </p>
+        </header>
+      ) : null}
 
       <div className="relative">
         <Search

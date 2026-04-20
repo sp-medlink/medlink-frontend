@@ -1,5 +1,6 @@
-import { PatientOrganisationsView } from "@/features/patient-organisations/ui/patient-organisations-view";
+import { redirect } from "next/navigation";
+import { routes } from "@/shared/config";
 
 export default function PatientOrganisationsPage() {
-  return <PatientOrganisationsView />;
+  redirect(routes.patient.root);
 }

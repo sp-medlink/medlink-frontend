@@ -1,5 +1,6 @@
-import { DoctorConsultationsView } from "@/features/doctor-consultations/ui/doctor-consultations-view";
+import { redirect } from "next/navigation";
+import { routes } from "@/shared/config";
 
 export default function DoctorConsultationsPage() {
-  return <DoctorConsultationsView />;
+  redirect(routes.doctor.root);
 }

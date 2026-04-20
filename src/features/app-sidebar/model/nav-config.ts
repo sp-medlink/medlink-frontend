@@ -1,23 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Bell,
   Building2,
-  Calendar,
-  CalendarClock,
-  FileText,
-  FolderOpen,
   GitBranch,
-  Hospital,
   LayoutDashboard,
   MessageSquare,
-  Pill,
-  Search,
   Settings,
   ShieldCheck,
   UserCog,
-  UserRound,
   Users,
-  Video,
 } from "lucide-react";
 
 import type { AdminCapabilities } from "@/entities/session";
@@ -101,39 +91,9 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
           match: "exact",
         },
         {
-          href: routes.patient.organisations,
-          label: "Organizations",
-          icon: Search,
-        },
-        {
-          href: routes.patient.appointments,
-          label: "Appointments",
-          icon: Calendar,
-        },
-        {
-          href: routes.patient.consultations,
-          label: "Video visits",
-          icon: Video,
-        },
-        {
           href: routes.patient.chats,
           label: "Chats",
           icon: MessageSquare,
-        },
-        {
-          href: routes.patient.records,
-          label: "Medical records",
-          icon: FileText,
-        },
-        {
-          href: routes.patient.documents,
-          label: "Prescriptions & files",
-          icon: FolderOpen,
-        },
-        {
-          href: routes.patient.notifications,
-          label: "Notifications",
-          icon: Bell,
         },
       ];
       if (isAnyAdmin) items.push(adminLink);
@@ -153,44 +113,9 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
           match: "exact",
         },
         {
-          href: routes.doctor.verification,
-          label: "Verification",
-          icon: ShieldCheck,
-        },
-        {
-          href: routes.doctor.schedule,
-          label: "Schedule",
-          icon: CalendarClock,
-        },
-        {
-          href: routes.doctor.appointments,
-          label: "Appointments",
-          icon: Calendar,
-        },
-        {
-          href: routes.doctor.consultations,
-          label: "Video visits",
-          icon: Video,
-        },
-        {
           href: routes.doctor.chats,
           label: "Chats",
           icon: MessageSquare,
-        },
-        {
-          href: routes.doctor.patients,
-          label: "Patients & records",
-          icon: UserRound,
-        },
-        {
-          href: routes.doctor.prescriptions,
-          label: "Prescriptions & notes",
-          icon: Pill,
-        },
-        {
-          href: routes.doctor.departments,
-          label: "Departments",
-          icon: Hospital,
         },
       ];
       if (isAnyAdmin) items.push(adminLink);

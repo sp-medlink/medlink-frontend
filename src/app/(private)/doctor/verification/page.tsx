@@ -1,5 +1,6 @@
-import { DoctorVerificationView } from "@/features/doctor-verification/ui/doctor-verification-view";
+import { redirect } from "next/navigation";
+import { routes } from "@/shared/config";
 
 export default function DoctorVerificationPage() {
-  return <DoctorVerificationView />;
+  redirect(routes.doctor.root);
 }

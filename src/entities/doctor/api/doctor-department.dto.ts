@@ -2,6 +2,9 @@ export interface DoctorDepartmentDto {
   id: string;
   doctor_id: string;
   department_id: string;
+  department_name?: string;
+  organization_id?: string;
+  organization_name?: string;
   position: string;
   description: string;
   appt_duration_in_minutes: number;
