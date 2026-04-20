@@ -191,10 +191,10 @@ export function ChatWidget({ variant = "dock" }: ChatWidgetProps) {
           <>
             <Chat.Header className="justify-between pt-[max(1rem,env(safe-area-inset-top))] pb-4">
               <div className="min-w-0">
-                <p className="text-sm font-semibold tracking-tight text-neutral-100">
+                <p className="text-sm font-semibold tracking-tight">
                   Conversations
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   {isAuthenticated
                     ? `${inboxRows.length} ${inboxRows.length === 1 ? "conversation" : "conversations"} · Messages on server`
                     : "Sign in to send messages"}
@@ -215,7 +215,7 @@ export function ChatWidget({ variant = "dock" }: ChatWidgetProps) {
                 <button
                   type="button"
                   onClick={close}
-                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:outline-none"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:outline-none"
                   aria-label="Close"
                 >
                   <X className="size-4" aria-hidden />
@@ -268,7 +268,7 @@ export function ChatWidget({ variant = "dock" }: ChatWidgetProps) {
   if (isPage) {
     if (!chatRole) {
       return (
-        <div className="flex min-h-screen w-full flex-1 flex-col items-center justify-center bg-neutral-950 p-6 text-sm text-neutral-400">
+        <div className="flex min-h-screen w-full flex-1 flex-col items-center justify-center bg-background p-6 text-sm text-muted-foreground">
           Chats are available as a patient or as a doctor.
         </div>
       );
@@ -310,7 +310,7 @@ export function ChatWidget({ variant = "dock" }: ChatWidgetProps) {
             exit="exit"
             className={cn(
               "fixed inset-y-0 right-0 z-110 flex h-dvh min-h-0 max-w-[100vw] flex-col overflow-hidden border-l",
-              "border-neutral-800 bg-neutral-950 text-neutral-100 backdrop-blur-xl",
+              "bg-background text-foreground backdrop-blur-xl shadow-[-8px_0_24px_-12px_rgba(0,0,0,0.12)]",
             )}
             style={{
               width: panelWidthPx,
@@ -330,11 +330,11 @@ export function ChatWidget({ variant = "dock" }: ChatWidgetProps) {
               className="absolute top-0 bottom-0 left-0 z-10 flex w-4 -translate-x-1/2 cursor-ew-resize touch-none items-center justify-center select-none hover:bg-emerald-500/10 active:bg-emerald-500/20"
             >
               <span
-                className="pointer-events-none flex items-center justify-center rounded-full border border-neutral-600/90 bg-neutral-900/95 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.35)] ring-1 ring-white/5"
+                className="pointer-events-none flex items-center justify-center rounded-full border bg-card py-3 shadow-sm"
                 aria-hidden
               >
                 <GripVertical
-                  className="size-5 text-neutral-400"
+                  className="size-5 text-muted-foreground"
                   strokeWidth={2}
                 />
               </span>

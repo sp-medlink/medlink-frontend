@@ -12,6 +12,8 @@ export {
   fetchMyDoctorDepartments,
   setDoctorDepartmentActive,
   deleteDoctorDepartment,
+  updateMyDoctorDepartment,
+  type UpdateMyDoctorDepartmentBody,
 } from "./api/doctor-department.api";
 export {
   doctorDepartmentsByOrgDeptQuery,

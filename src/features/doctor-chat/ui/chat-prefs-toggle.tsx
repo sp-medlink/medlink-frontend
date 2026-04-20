@@ -45,7 +45,7 @@ export function ChatPrefsToggle({ className }: ChatPrefsToggleProps) {
             onClick={toggleSound}
             aria-pressed={soundEnabled}
             aria-label={soundEnabled ? "Mute sound" : "Enable sound"}
-            className="inline-flex size-9 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
+            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
           >
             {soundEnabled ? (
               <Volume2 className="size-4" aria-hidden />
@@ -71,7 +71,7 @@ export function ChatPrefsToggle({ className }: ChatPrefsToggleProps) {
                   ? "Disable desktop notifications"
                   : "Enable desktop notifications"
               }
-              className="inline-flex size-9 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
             >
               {desktopEnabled ? (
                 <Bell className="size-4" aria-hidden />

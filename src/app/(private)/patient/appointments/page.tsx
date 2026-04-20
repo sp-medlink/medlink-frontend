@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
-import { routes } from "@/shared/config";
+import type { Metadata } from "next";
+import { PatientAppointmentsView } from "@/features/patient-appointments/ui/patient-appointments-view";
+
+export const metadata: Metadata = {
+  title: "Appointments",
+};
 
 export default function PatientAppointmentsPage() {
-  redirect(routes.patient.root);
+  return <PatientAppointmentsView />;
 }

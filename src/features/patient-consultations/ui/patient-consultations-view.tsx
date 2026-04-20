@@ -14,7 +14,10 @@ import { toast } from "sonner";
 
 import {
   appointmentsListOptions,
+  computeVcWindow,
   fetchVideoCallTokenForAppointment,
+  formatVCJoinError,
+  formatVcWindowHint,
 } from "@/entities/appointment";
 import { ApiError } from "@/shared/api";
 import { routes } from "@/shared/config";
@@ -87,9 +90,7 @@ export function PatientConsultationsView({ embedded = false }: PatientConsultati
       setSession({ url: data.url, token: data.token });
     },
     onError: (e) => {
-      const msg =
-        e instanceof ApiError ? e.message : "Could not join the call";
-      toast.error(msg);
+      toast.error(formatVCJoinError(e));
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["appointment"] });
@@ -194,33 +195,52 @@ export function PatientConsultationsView({ embedded = false }: PatientConsultati
         </Card>
       ) : (
         <ul className="space-y-3">
-          {online.map((a) => (
-            <li key={a.id}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    Dr. {a.doctorFirstName} {a.doctorLastName}
-                  </CardTitle>
-                  <CardDescription>
-                    {formatDate(a.date)} · {formatTime(a.time)} · {a.departmentName}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    type="button"
-                    disabled={join.isPending}
-                    onClick={() => join.mutate(a.id)}
-                  >
-                    {join.isPending ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      "Join"
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
+          {online.map((a) => {
+            const vc = computeVcWindow(a);
+            const canJoin = vc.phase === "open";
+            const hint = formatVcWindowHint(vc);
+            return (
+              <li key={a.id}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      Dr. {a.doctorFirstName} {a.doctorLastName}
+                    </CardTitle>
+                    <CardDescription>
+                      {formatDate(a.date)} · {formatTime(a.time)} ·{" "}
+                      {a.departmentName}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="button"
+                      disabled={join.isPending || !canJoin}
+                      onClick={() => join.mutate(a.id)}
+                      title={canJoin ? undefined : hint}
+                    >
+                      {join.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        "Join"
+                      )}
+                    </Button>
+                    {hint ? (
+                      <span
+                        className={cn(
+                          "text-xs",
+                          canJoin
+                            ? "text-emerald-600 font-medium"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {canJoin ? `● ${hint}` : hint}
+                      </span>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>

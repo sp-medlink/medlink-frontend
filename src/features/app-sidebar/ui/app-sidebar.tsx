@@ -7,8 +7,9 @@ import { usePathname } from "next/navigation";
 import { Activity, Settings } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useAdminCapabilities, useCurrentUser } from "@/entities/session";
+import { useAdminCapabilities, useAppRole, useCurrentUser } from "@/entities/session";
 import { LogoutButton } from "@/features/auth-logout";
+import { NotificationsBell } from "@/features/notifications-bell";
 import { routes } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
 
@@ -35,9 +36,11 @@ export function AppSidebar({ area, expanded }: AppSidebarProps) {
   const pathname = usePathname();
   const user = useCurrentUser();
   const caps = useAdminCapabilities();
+  const appRole = useAppRole();
   // Admin shortcut in patient/doctor sidebars + capability-gated items in the
-  // admin sidebar are all driven by the same capability bag.
-  const items = getNavItems(area, { caps });
+  // admin sidebar are all driven by the same capability bag. `appRole` drives
+  // the reverse shortcut (admin -> doctor/patient home).
+  const items = getNavItems(area, { caps, appRole });
   const itemMap = useMemo(
     () => new Map(items.map((item) => [item.href, item])),
     [items],
@@ -93,7 +96,7 @@ export function AppSidebar({ area, expanded }: AppSidebarProps) {
         id="app-sidebar"
         className="flex h-full min-h-0 w-full flex-col bg-transparent"
       >
-        <div className="flex h-14 shrink-0 items-center justify-center border-b border-neutral-200 dark:border-neutral-800">
+        <div className="flex h-14 shrink-0 items-center justify-center border-b border-neutral-200">
           <Activity className="size-6 shrink-0 text-emerald-600" aria-hidden />
         </div>
 
@@ -131,8 +134,8 @@ export function AppSidebar({ area, expanded }: AppSidebarProps) {
                   className={cn(
                     "flex w-full justify-center rounded-md px-2 py-2.5 text-sm transition-colors",
                     active
-                      ? "bg-neutral-200/80 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-50"
-                      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900",
+                      ? "bg-neutral-200/80 font-medium text-neutral-900"
+                      : "text-neutral-600 hover:bg-neutral-100",
                   )}
                   aria-label={label}
                 >
@@ -145,10 +148,11 @@ export function AppSidebar({ area, expanded }: AppSidebarProps) {
           </Reorder.Group>
         </nav>
 
-        <div className="flex shrink-0 flex-col items-center gap-2 border-t border-neutral-200 px-1 py-3 dark:border-neutral-800">
+        <div className="flex shrink-0 flex-col items-center gap-2 border-t border-neutral-200 px-1 py-3">
+          <NotificationsBell iconOnly />
           <Link
             href={routes.settings}
-            className="flex size-10 items-center justify-center rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+            className="flex size-10 items-center justify-center rounded-md text-neutral-600 hover:bg-neutral-100"
             title="Profile & settings"
             aria-label="Profile & settings"
           >
@@ -168,7 +172,7 @@ export function AppSidebar({ area, expanded }: AppSidebarProps) {
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-neutral-200 px-3 dark:border-neutral-800">
         <div className="flex min-w-0 items-center gap-2">
           <Activity className="size-7 shrink-0 text-emerald-600" aria-hidden />
-          <span className="truncate bg-linear-to-r from-emerald-700 to-teal-600 bg-clip-text font-semibold tracking-tight text-transparent dark:from-emerald-400 dark:to-teal-400">
+          <span className="truncate bg-linear-to-r from-emerald-700 to-teal-600 bg-clip-text font-semibold tracking-tight text-transparent">
             Medlink
           </span>
         </div>
@@ -230,11 +234,14 @@ export function AppSidebar({ area, expanded }: AppSidebarProps) {
       </nav>
 
       <div
-        className="border-t border-neutral-200 p-3 dark:border-neutral-800"
+        className="border-t border-neutral-200 p-3"
       >
+        <div className="mb-2">
+          <NotificationsBell />
+        </div>
         <Link
           href={routes.settings}
-          className="mb-1 block truncate rounded-md px-1 py-0.5 text-sm font-medium text-neutral-800 hover:bg-neutral-100 hover:underline dark:text-neutral-100 dark:hover:bg-neutral-900"
+          className="mb-1 block truncate rounded-md px-1 py-0.5 text-sm font-medium text-neutral-800 hover:bg-neutral-100 hover:underline"
           title="Profile & settings"
         >
           {displayName}

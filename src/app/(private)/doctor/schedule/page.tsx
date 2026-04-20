@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { routes } from "@/shared/config";
 
+/** Merged into `/doctor/practice` — see the doctor practice page notes. */
 export default function DoctorSchedulePage() {
-  redirect(routes.doctor.root);
+  redirect("/doctor/practice#schedule");
 }

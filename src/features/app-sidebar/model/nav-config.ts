@@ -1,13 +1,19 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowLeft,
+  Briefcase,
   Building2,
+  CalendarDays,
   GitBranch,
+  Hospital,
   LayoutDashboard,
   MessageSquare,
+  ScrollText,
   Settings,
   ShieldCheck,
   UserCog,
   Users,
+  Video,
 } from "lucide-react";
 
 import type { AdminCapabilities } from "@/entities/session";
@@ -41,6 +47,12 @@ export interface NavOptions {
    *      Organizations + Admins; dept-admin sees Departments; etc.).
    */
   caps?: AdminCapabilities;
+  /**
+   * Resolved base-role surface. Used to inject a "back" shortcut in the
+   * admin sidebar for doctors / patients who arrived via the Admin link
+   * — without it they'd have no path back to their primary area.
+   */
+  appRole?: AppRole | null;
 }
 
 export function getSidebarAreaFromPath(pathname: string): SidebarArea | null {
@@ -83,15 +95,32 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
 
   switch (area) {
     case "patient": {
-      // Minimalist sidebar — patient home (HomeLandingView) surfaces
-      // the per-feature quick links. Keeping the sidebar lean mirrors
-      // the doctor area's tabbed-workspace philosophy.
       const items: NavItem[] = [
         {
           href: routes.patient.root,
           label: "Home",
           icon: LayoutDashboard,
           match: "exact",
+        },
+        {
+          href: routes.patient.organisations,
+          label: "Organizations",
+          icon: Hospital,
+        },
+        {
+          href: routes.patient.appointments,
+          label: "Appointments",
+          icon: CalendarDays,
+        },
+        {
+          href: routes.patient.consultations,
+          label: "Video visits",
+          icon: Video,
+        },
+        {
+          href: routes.patient.records,
+          label: "Medical record",
+          icon: ScrollText,
         },
         {
           href: routes.patient.chats,
@@ -108,15 +137,27 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
       return items;
     }
     case "doctor": {
-      // Doctor home is now a tabbed workspace that contains
-      // Verification / Departments / Schedule / Appointments inline,
-      // so the sidebar is deliberately lean.
       const items: NavItem[] = [
         {
           href: routes.doctor.root,
           label: "Home",
           icon: LayoutDashboard,
           match: "exact",
+        },
+        {
+          href: routes.doctor.appointments,
+          label: "Appointments",
+          icon: CalendarDays,
+        },
+        {
+          href: routes.doctor.patients,
+          label: "Patients",
+          icon: Users,
+        },
+        {
+          href: routes.doctor.practice,
+          label: "Practice",
+          icon: Briefcase,
         },
         {
           href: routes.doctor.chats,
@@ -139,14 +180,29 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
       const anyOrg = caps?.anyOrg ?? false;
       const anyDept = caps?.anyDept ?? false;
 
-      const items: NavItem[] = [
-        {
-          href: routes.admin.root,
-          label: "Overview",
-          icon: LayoutDashboard,
-          match: "exact",
-        },
-      ];
+      const items: NavItem[] = [];
+      // Doctors / patients who enter the admin area via the "Admin" shortcut
+      // need a way back to their primary surface. Platform admins don't —
+      // admin *is* their primary surface.
+      if (opts.appRole === "doctor") {
+        items.push({
+          href: routes.doctor.root,
+          label: "Back to doctor area",
+          icon: ArrowLeft,
+        });
+      } else if (opts.appRole === "patient") {
+        items.push({
+          href: routes.patient.root,
+          label: "Back to patient area",
+          icon: ArrowLeft,
+        });
+      }
+      items.push({
+        href: routes.admin.root,
+        label: "Overview",
+        icon: LayoutDashboard,
+        match: "exact",
+      });
       if (platform || anyOrg) {
         items.push({
           href: routes.admin.organizations,
@@ -180,6 +236,11 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
             href: routes.admin.admins,
             label: "Platform admins",
             icon: UserCog,
+          },
+          {
+            href: routes.admin.audit,
+            label: "Audit log",
+            icon: ScrollText,
           },
         );
       }

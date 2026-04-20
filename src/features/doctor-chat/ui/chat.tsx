@@ -39,7 +39,7 @@ function Root({ className, children, ...rest }: RootProps) {
   return (
     <section
       className={cn(
-        "flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-neutral-950 text-neutral-100",
+        "flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-background text-foreground",
         className,
       )}
       {...rest}
@@ -53,7 +53,7 @@ function Header({ className, children, ...rest }: HeaderProps) {
   return (
     <header
       className={cn(
-        "flex shrink-0 items-center gap-2 border-b border-neutral-800 bg-neutral-950 px-2 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-3",
+        "flex shrink-0 items-center gap-2 border-b bg-background px-2 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-3",
         className,
       )}
       {...rest}
@@ -78,7 +78,7 @@ const Content = forwardRef<HTMLDivElement, ContentProps>(function Content(
         ref={ref}
         onScroll={onScroll}
         className={cn(
-          "scrollbar-none min-h-0 flex-1 overflow-y-auto bg-neutral-950 px-3 py-3",
+          "scrollbar-none min-h-0 flex-1 overflow-y-auto bg-background px-3 py-3",
           className,
         )}
         {...rest}
@@ -94,7 +94,7 @@ function Footer({ className, children, ...rest }: FooterProps) {
   return (
     <footer
       className={cn(
-        "shrink-0 border-t border-neutral-800 bg-neutral-950 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2",
+        "shrink-0 border-t bg-background px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2",
         className,
       )}
       {...rest}
@@ -112,7 +112,7 @@ function Footer({ className, children, ...rest }: FooterProps) {
 function DateSeparator({ label }: { label: string }) {
   return (
     <div className="flex justify-center py-2">
-      <span className="rounded-full bg-neutral-800/90 px-3 py-1 text-[11px] font-medium text-neutral-400">
+      <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
         {label}
       </span>
     </div>

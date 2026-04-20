@@ -25,9 +25,11 @@ interface SidebarMotionColumnProps {
 }
 
 function sidebarSurfaceClass(open: boolean): string {
+  // Kept light-themed regardless of OS preference — the rest of the app
+  // is hardcoded light, so a dark sidebar would create a jarring split.
   return open
-    ? "border-r border-neutral-200 bg-neutral-50 shadow-[2px_0_24px_-12px_rgba(0,0,0,0.12)] dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-[2px_0_24px_-12px_rgba(0,0,0,0.4)]"
-    : "border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950";
+    ? "border-r border-neutral-200 bg-neutral-50 shadow-[2px_0_24px_-12px_rgba(0,0,0,0.12)]"
+    : "border-r border-neutral-200 bg-neutral-50";
 }
 
 export function SidebarMotionColumn({ open, onOpen, onClose, area }: SidebarMotionColumnProps) {
@@ -59,7 +61,6 @@ export function SidebarMotionColumn({ open, onOpen, onClose, area }: SidebarMoti
           className={cn(
             "absolute top-1/2 right-0 z-50 inline-flex size-9 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-white shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 active:scale-[0.97]",
             "border-emerald-700/30 bg-emerald-600 ring-2 ring-emerald-400/30 hover:bg-emerald-500",
-            "dark:border-emerald-400/40 dark:bg-emerald-500 dark:ring-emerald-300/25 dark:hover:bg-emerald-400",
           )}
         >
           <ChevronLeft

@@ -250,7 +250,7 @@ export function ChatConversation({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex size-9 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
+          className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
           aria-label="Back to conversations"
         >
           <ChevronLeft className="size-5" aria-hidden />
@@ -260,7 +260,7 @@ export function ChatConversation({
           <PeerInfoPopover row={conversation}>
             <button
               type="button"
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-0.5 text-left transition hover:bg-neutral-900 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-0.5 text-left transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
               aria-label={`${conversation.peerDisplayName} — details`}
             >
               <ChatAvatar
@@ -269,10 +269,10 @@ export function ChatConversation({
                 sizeClass="size-9"
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-neutral-100">
+                <span className="block truncate text-sm font-semibold">
                   {conversation.peerDisplayName}
                 </span>
-                <span className="block truncate text-xs text-neutral-500">
+                <span className="block truncate text-xs text-muted-foreground">
                   {formatDistanceToNow(
                     new Date(conversation.lastMessageCreatedAt),
                     { addSuffix: true, locale: enUS },
@@ -283,7 +283,7 @@ export function ChatConversation({
           </PeerInfoPopover>
         ) : (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-neutral-100">
+            <p className="truncate text-sm font-semibold">
               {chatRole === "doctor" ? "Patient" : "Doctor"}
             </p>
           </div>
@@ -296,7 +296,7 @@ export function ChatConversation({
             type="button"
             onClick={() => void onDelete()}
             disabled={deleteChatMutation.isPending}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-red-950/40 hover:text-red-200 focus-visible:ring-2 focus-visible:ring-red-400/35 focus-visible:outline-none disabled:opacity-40"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/35 focus-visible:outline-none disabled:opacity-40"
             aria-label="Delete chat"
           >
             {deleteChatMutation.isPending ? (
@@ -311,7 +311,7 @@ export function ChatConversation({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex size-9 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
+            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-emerald-400/35 focus-visible:outline-none"
             aria-label="Close"
           >
             <X className="size-4" aria-hidden />
@@ -338,14 +338,14 @@ export function ChatConversation({
         {messagesQuery.isPending && messagesQuery.data === undefined ? (
           <div className="flex justify-center py-10">
             <Loader2
-              className="size-7 animate-spin text-neutral-500"
+              className="size-7 animate-spin text-muted-foreground"
               aria-hidden
             />
           </div>
         ) : messagesQuery.isError ? (
-          <p className="text-sm text-red-300/90">Could not load messages.</p>
+          <p className="text-sm text-destructive">Could not load messages.</p>
         ) : lines.length === 0 ? (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             No messages yet — say hello. Your conversation is stored
             securely.
           </p>
@@ -402,7 +402,7 @@ export function ChatConversation({
         <label className="sr-only" htmlFor="chat-input">
           Message
         </label>
-        <div className="flex min-h-0 items-end gap-2 rounded-2xl border border-neutral-700/80 bg-neutral-900/95 py-1.5 pr-1.5 pl-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+        <div className="flex min-h-0 items-end gap-2 rounded-2xl border bg-muted/40 py-1.5 pr-1.5 pl-3">
           <textarea
             ref={textareaRef}
             id="chat-input"
@@ -411,7 +411,7 @@ export function ChatConversation({
             placeholder="Message"
             rows={1}
             disabled={sendMutation.isPending}
-            className="scrollbar-none min-h-0 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-left text-[15px] leading-5 text-neutral-100 placeholder:text-neutral-500 focus:outline-none disabled:opacity-50"
+            className="scrollbar-none min-h-0 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-left text-[15px] leading-5 text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
             style={{ height: CHAT_INPUT_MIN_H, maxHeight: CHAT_INPUT_MAX_H }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {

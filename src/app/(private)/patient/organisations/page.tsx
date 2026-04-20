@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
-import { routes } from "@/shared/config";
+import type { Metadata } from "next";
+import { PatientOrganisationsView } from "@/features/patient-organisations/ui/patient-organisations-view";
+
+export const metadata: Metadata = {
+  title: "Organizations",
+};
 
 export default function PatientOrganisationsPage() {
-  redirect(routes.patient.root);
+  return <PatientOrganisationsView />;
 }

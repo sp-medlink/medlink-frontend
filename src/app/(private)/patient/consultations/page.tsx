@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
-import { routes } from "@/shared/config";
+import type { Metadata } from "next";
+import { PatientConsultationsView } from "@/features/patient-consultations/ui/patient-consultations-view";
+
+export const metadata: Metadata = {
+  title: "Video visits",
+};
 
 export default function PatientConsultationsPage() {
-  redirect(routes.patient.root);
+  return <PatientConsultationsView />;
 }

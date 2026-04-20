@@ -112,22 +112,22 @@ export function PatientChatStartWizard({
   if (step === "org") {
     return (
       <li className="flex flex-col gap-3 px-2 py-2">
-        <p className="text-center text-sm font-medium text-neutral-200">
+        <p className="text-center text-sm font-medium text-foreground">
           New conversation
         </p>
-        <p className="text-center text-xs leading-relaxed text-neutral-500">
+        <p className="text-center text-xs leading-relaxed text-muted-foreground">
           Choose an organization, then a department and a doctor.
         </p>
         {orgsQuery.isPending ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="size-6 animate-spin text-neutral-400" />
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : orgsQuery.isError ? (
-          <p className="text-center text-xs text-red-300/90">
+          <p className="text-center text-xs text-destructive">
             Could not load organizations.
           </p>
         ) : organizations.length === 0 ? (
-          <p className="text-center text-xs text-neutral-500">
+          <p className="text-center text-xs text-muted-foreground">
             No organizations in the directory.
           </p>
         ) : (
@@ -144,17 +144,17 @@ export function PatientChatStartWizard({
                       setOrgId(o.id);
                       setStep("dept");
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900/60 px-3 py-2.5 text-left transition hover:border-neutral-600 hover:bg-neutral-800/80 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex w-full items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-left transition hover:border-emerald-500/50 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-neutral-800">
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
                       {av ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={av} alt="" className="size-full object-cover" />
                       ) : (
-                        <Building2 className="size-5 text-neutral-500" />
+                        <Building2 className="size-5 text-muted-foreground" />
                       )}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm text-neutral-100">
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                       {o.name}
                     </span>
                   </button>
@@ -178,15 +178,15 @@ export function PatientChatStartWizard({
           <ChevronLeft className="size-4" />
           Organizations
         </button>
-        <p className="text-sm font-medium text-neutral-200">Department</p>
+        <p className="text-sm font-medium text-foreground">Department</p>
         {deptsQuery.isPending ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="size-6 animate-spin text-neutral-400" />
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : deptsQuery.isError ? (
-          <p className="text-xs text-red-300/90">Could not load departments.</p>
+          <p className="text-xs text-destructive">Could not load departments.</p>
         ) : departments.length === 0 ? (
-          <p className="text-xs text-neutral-500">No departments.</p>
+          <p className="text-xs text-muted-foreground">No departments.</p>
         ) : (
           <ul className="flex max-h-[min(50vh,420px)] flex-col gap-1.5 overflow-y-auto">
             {departments.map((d) => {
@@ -201,10 +201,10 @@ export function PatientChatStartWizard({
                       setDeptId(d.id);
                       setStep("doctor");
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900/60 px-3 py-2.5 text-left transition hover:border-neutral-600 hover:bg-neutral-800/80 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex w-full items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-left transition hover:border-emerald-500/50 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Layers className="size-5 shrink-0 text-neutral-500" />
-                    <span className="min-w-0 flex-1 truncate text-sm text-neutral-100">
+                    <Layers className="size-5 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                       {d.name}
                     </span>
                   </button>
@@ -227,18 +227,18 @@ export function PatientChatStartWizard({
         <ChevronLeft className="size-4" />
         Departments
       </button>
-      <p className="text-sm font-medium text-neutral-200">Doctor</p>
+      <p className="text-sm font-medium text-foreground">Doctor</p>
       {doctorsQuery.isPending ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="size-6 animate-spin text-neutral-400" />
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : doctorsQuery.isError ? (
-        <p className="text-xs text-red-300/90">
+        <p className="text-xs text-destructive">
           Could not load doctors. Open the directory on the site or try again
           later.
         </p>
       ) : doctors.length === 0 ? (
-        <p className="text-xs text-neutral-500">No doctors in this department.</p>
+        <p className="text-xs text-muted-foreground">No doctors in this department.</p>
       ) : (
         <ul className="flex max-h-[min(50vh,420px)] flex-col gap-1.5 overflow-y-auto">
           {doctors.map((doc) => {
@@ -251,22 +251,22 @@ export function PatientChatStartWizard({
                   type="button"
                   disabled={busy}
                   onClick={() => void onStartChat(doc.doctor_department_id)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900/60 px-3 py-2.5 text-left transition hover:border-emerald-600/50 hover:bg-neutral-800/80"
+                  className="flex w-full items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-left transition hover:border-emerald-500/50 hover:bg-muted"
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-800">
+                  <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
                     {av ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={av} alt="" className="size-full object-cover" />
                     ) : (
-                      <Stethoscope className="size-5 text-neutral-500" />
+                      <Stethoscope className="size-5 text-muted-foreground" />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-neutral-100">
+                    <span className="block truncate text-sm text-foreground">
                       {name}
                     </span>
                     {doc.position ? (
-                      <span className="block truncate text-xs text-neutral-500">
+                      <span className="block truncate text-xs text-muted-foreground">
                         {doc.position}
                       </span>
                     ) : null}

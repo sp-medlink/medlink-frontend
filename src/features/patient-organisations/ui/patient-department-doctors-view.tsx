@@ -5,7 +5,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import { Loader2, MessageCircle, Search, Stethoscope } from "lucide-react";
+import { Loader2, MessageCircle, Search, Stethoscope, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -22,6 +22,7 @@ import {
 } from "@/shared/config";
 import { doctorChatKeys } from "@/features/doctor-chat/api/query-keys";
 import { useDoctorChatUiStore } from "@/features/doctor-chat/model/chat-ui-store";
+import { BookAppointmentDialog } from "@/features/patient-appointment-book";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 
@@ -213,20 +214,36 @@ export function PatientDepartmentDoctorsView() {
                     </span>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="shrink-0 gap-2"
-                  disabled={busy}
-                  onClick={() => void onWrite(d.doctor_department_id)}
-                >
-                  {busy ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <MessageCircle className="size-4" />
-                  )}
-                  Message
-                </Button>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <BookAppointmentDialog
+                    orgId={organizationId}
+                    deptId={departmentId}
+                    doctorDepartmentId={d.doctor_department_id}
+                    doctorName={name}
+                    departmentName={deptName}
+                    trigger={
+                      <Button type="button" size="sm" className="gap-2">
+                        <CalendarPlus className="size-4" aria-hidden />
+                        Book
+                      </Button>
+                    }
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    disabled={busy}
+                    onClick={() => void onWrite(d.doctor_department_id)}
+                  >
+                    {busy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <MessageCircle className="size-4" />
+                    )}
+                    Message
+                  </Button>
+                </div>
               </li>
             );
           })}

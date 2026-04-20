@@ -76,7 +76,7 @@ export function ChatAvatar({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 overflow-hidden rounded-full bg-neutral-800 ring-1 ring-neutral-700/90",
+        "relative inline-flex shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border",
         sizeClass,
       )}
     >
@@ -91,7 +91,7 @@ export function ChatAvatar({
           onError={() => setFailed(true)}
         />
       ) : (
-        <span className="flex size-full items-center justify-center text-[0.7rem] font-semibold tracking-tight text-neutral-200">
+        <span className="flex size-full items-center justify-center text-[0.7rem] font-semibold tracking-tight text-muted-foreground">
           {initialsOf(name)}
         </span>
       )}
@@ -135,9 +135,9 @@ export function ChatMessageBubble({
           "wrap-anywhere flex min-w-0 w-fit max-w-[92%] flex-col gap-1 rounded-2xl px-4 py-2 text-left text-[13px] leading-snug whitespace-pre-wrap",
           m.role === "user"
             ? failed
-              ? "bg-red-950/40 text-red-100 ring-1 ring-red-900/60"
-              : "bg-neutral-800 text-neutral-100"
-            : "bg-neutral-900 text-neutral-100 ring-1 ring-neutral-800",
+              ? "bg-destructive/10 text-destructive ring-1 ring-destructive/30"
+              : "bg-emerald-600 text-white"
+            : "bg-muted text-foreground ring-1 ring-border",
           sending ? "opacity-70" : undefined,
         )}
       >
@@ -145,14 +145,19 @@ export function ChatMessageBubble({
         <div className="flex shrink-0 items-center justify-end gap-1.5">
           {sending ? (
             <span
-              className="text-[11px] leading-none text-neutral-400"
+              className={cn(
+                "text-[11px] leading-none",
+                m.role === "user"
+                  ? "text-white/80"
+                  : "text-muted-foreground",
+              )}
               aria-label="Sending"
             >
               Sending…
             </span>
           ) : null}
           {failed ? (
-            <span className="inline-flex items-center gap-1 text-[11px] leading-none text-red-300">
+            <span className="inline-flex items-center gap-1 text-[11px] leading-none text-destructive">
               <TriangleAlert className="size-3" aria-hidden />
               Failed
             </span>
@@ -161,7 +166,7 @@ export function ChatMessageBubble({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-none text-red-200 underline-offset-2 hover:underline"
+              className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-none text-destructive underline-offset-2 hover:underline"
               aria-label="Retry sending"
             >
               <RotateCcw className="size-3" aria-hidden />
@@ -172,7 +177,7 @@ export function ChatMessageBubble({
             <button
               type="button"
               onClick={onDiscard}
-              className="rounded px-1 py-0.5 text-[11px] leading-none text-neutral-400 underline-offset-2 hover:text-neutral-200 hover:underline"
+              className="rounded px-1 py-0.5 text-[11px] leading-none text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               aria-label="Discard failed message"
             >
               Discard
@@ -183,7 +188,7 @@ export function ChatMessageBubble({
               dateTime={iso}
               className={cn(
                 "text-[11px] leading-none tabular-nums tracking-tight select-none",
-                m.role === "user" ? "text-neutral-400" : "text-neutral-500",
+                m.role === "user" ? "text-white/70" : "text-muted-foreground",
               )}
             >
               {timeStr}

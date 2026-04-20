@@ -32,12 +32,17 @@ export const routes = {
   },
   doctor: {
     root: "/doctor",
+    /**
+     * Practice setup: verification + departments + schedule in a single page.
+     * Replaces the three separate routes — those now redirect here.
+     */
+    practice: "/doctor/practice",
     verification: "/doctor/verification",
     schedule: "/doctor/schedule",
     appointments: "/doctor/appointments",
     consultations: "/doctor/consultations",
     chats: "/doctor/chats",
-    /** Access patient records / encounter context */
+    /** Patient-centric directory aggregated from the doctor's appointments. */
     patients: "/doctor/patients",
     prescriptions: "/doctor/prescriptions",
     /** Orgs / departments the doctor belongs to */
@@ -61,5 +66,7 @@ export const routes = {
     users: "/admin/users",
     /** Platform-admin-only: doctor verification queue + audit trail. */
     verifications: "/admin/verifications",
+    /** Platform-admin-only: audit log of privileged actions. */
+    audit: "/admin/audit",
   },
 } as const;

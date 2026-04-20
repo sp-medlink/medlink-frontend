@@ -6,7 +6,7 @@ import { cn } from "@/shared/lib/utils";
 import { useLogout } from "../model/use-logout";
 
 const logoutStyles =
-  "border-rose-300 bg-rose-50/80 text-rose-800 shadow-xs hover:bg-rose-100 hover:text-rose-900 dark:border-rose-800/80 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/70 dark:hover:text-rose-50";
+  "border-rose-300 bg-rose-50/80 text-rose-800 shadow-xs hover:bg-rose-100 hover:text-rose-900";
 
 interface LogoutButtonProps {
   variant?: "default" | "outline" | "ghost" | "secondary" | "destructive" | "link";

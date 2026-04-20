@@ -63,7 +63,7 @@ export function ChatInboxList({
 
   return (
     <motion.ul
-      className="scrollbar-none flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto bg-neutral-950 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="scrollbar-none flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto bg-background p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       variants={listContainerVariants}
       initial="hidden"
       animate="visible"
@@ -76,19 +76,19 @@ export function ChatInboxList({
               className="flex items-center gap-3 rounded-xl px-3 py-2.5"
               aria-hidden
             >
-              <div className="size-11 shrink-0 animate-pulse rounded-full bg-neutral-800" />
+              <div className="size-11 shrink-0 animate-pulse rounded-full bg-muted" />
               <div className="min-w-0 flex-1 space-y-2">
-                <div className="h-4 w-[58%] max-w-56 animate-pulse rounded bg-neutral-800" />
-                <div className="h-3 w-[36%] max-w-36 animate-pulse rounded bg-neutral-800" />
+                <div className="h-4 w-[58%] max-w-56 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-[36%] max-w-36 animate-pulse rounded bg-muted" />
               </div>
             </li>
           ))}
         </>
       ) : !isAuthenticated ? (
-        <li className="rounded-xl border border-neutral-800 bg-neutral-900/40 px-3 py-4 text-center text-sm text-neutral-400">
+        <li className="rounded-xl border bg-muted/40 px-3 py-4 text-center text-sm text-muted-foreground">
           <Link
             href={routes.login}
-            className="font-medium text-emerald-400 underline-offset-2 hover:underline"
+            className="font-medium text-emerald-600 underline-offset-2 hover:underline"
             onClick={onDismiss}
           >
             Sign in
@@ -98,12 +98,12 @@ export function ChatInboxList({
       ) : loading ? (
         <li className="flex justify-center py-8">
           <Loader2
-            className="size-6 animate-spin text-neutral-400"
+            className="size-6 animate-spin text-muted-foreground"
             aria-hidden
           />
         </li>
       ) : isError ? (
-        <li className="rounded-xl border border-red-900/50 bg-red-950/20 px-3 py-3 text-sm text-red-200/90">
+        <li className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-3 text-sm text-destructive">
           {formatError(errorMessage)}
         </li>
       ) : emptyState ? (
@@ -112,12 +112,12 @@ export function ChatInboxList({
         ) : (
           <li className="flex flex-col items-center gap-3 px-3 py-10 text-center">
             <Minus
-              className="size-7 text-neutral-600"
+              className="size-7 text-muted-foreground"
               strokeWidth={2}
               aria-hidden
             />
-            <p className="text-sm font-medium text-neutral-200">No chats</p>
-            <p className="max-w-[16rem] text-xs leading-relaxed text-neutral-500">
+            <p className="text-sm font-medium">No chats</p>
+            <p className="max-w-[16rem] text-xs leading-relaxed text-muted-foreground">
               When patients message you, conversations will appear here.
             </p>
           </li>
@@ -147,8 +147,8 @@ export function ChatInboxList({
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition focus-visible:ring-2 focus-visible:ring-emerald-500/25 focus-visible:outline-none",
                   hasUnread
-                    ? "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-400/60 hover:bg-emerald-500/10"
-                    : "border-transparent bg-neutral-900/50 hover:border-neutral-700 hover:bg-neutral-800/80",
+                    ? "border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/60 hover:bg-emerald-500/10"
+                    : "border-transparent bg-muted/40 hover:border-border hover:bg-muted",
                 )}
               >
                 <ChatAvatar
@@ -161,16 +161,14 @@ export function ChatInboxList({
                     <span
                       className={cn(
                         "block truncate text-sm",
-                        hasUnread
-                          ? "font-semibold text-white"
-                          : "font-medium text-neutral-100",
+                        hasUnread ? "font-semibold" : "font-medium",
                       )}
                     >
                       {name}
                     </span>
                     {hasUnread ? (
                       <span
-                        className="inline-block size-2 shrink-0 rounded-full bg-emerald-400"
+                        className="inline-block size-2 shrink-0 rounded-full bg-emerald-500"
                         aria-label="Unread"
                       />
                     ) : null}
@@ -179,8 +177,8 @@ export function ChatInboxList({
                     className={cn(
                       "block truncate text-xs",
                       hasUnread
-                        ? "text-emerald-200/90"
-                        : "text-neutral-500",
+                        ? "text-emerald-700"
+                        : "text-muted-foreground",
                     )}
                   >
                     {lastLabel}

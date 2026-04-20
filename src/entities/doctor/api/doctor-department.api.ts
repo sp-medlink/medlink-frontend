@@ -54,6 +54,23 @@ export async function deleteDoctorDepartment(
   await apiFetch(`/user/doctor/departments/${docDeptId}`, { method: "DELETE" });
 }
 
+export interface UpdateMyDoctorDepartmentBody {
+  position: string;
+  description: string;
+  appt_duration_in_minutes: number;
+}
+
+/** Update my own doctor-department row — position, description, slot length. */
+export async function updateMyDoctorDepartment(
+  docDeptId: string,
+  body: UpdateMyDoctorDepartmentBody,
+): Promise<void> {
+  await apiFetch(`/user/doctor/departments/${docDeptId}`, {
+    method: "PUT",
+    json: body,
+  });
+}
+
 // ----- Org-admin-scoped (list + promote to dept-admin) -----
 
 export async function fetchDoctorDepartmentsByOrgDept(

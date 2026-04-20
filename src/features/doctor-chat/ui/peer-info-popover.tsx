@@ -55,9 +55,9 @@ export function PeerInfoPopover({ row, children }: PeerInfoPopoverProps) {
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-80 border-neutral-800 bg-neutral-950 p-0 text-neutral-100"
+        className="w-80 p-0"
       >
-        <header className="border-b border-neutral-800 px-4 pt-4 pb-3">
+        <header className="border-b px-4 pt-4 pb-3">
           <p className="text-sm font-semibold">
             {row.peerDisplayName || (role === "doctor" ? "Patient" : "Doctor")}
           </p>
@@ -69,7 +69,7 @@ export function PeerInfoPopover({ row, children }: PeerInfoPopoverProps) {
         <div className="space-y-2.5 px-4 py-3 text-sm">
           {role === "doctor" ? (
             ownDeptsQuery.isPending ? (
-              <div className="flex items-center gap-2 text-neutral-400">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" aria-hidden />
                 Loading department…
               </div>
@@ -99,7 +99,7 @@ export function PeerInfoPopover({ row, children }: PeerInfoPopoverProps) {
           )}
         </div>
 
-        <footer className="flex flex-wrap items-center gap-2 border-t border-neutral-800 px-4 py-3">
+        <footer className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
           {role === "patient" ? (
             <Link
               href={routes.patient.organisations}
@@ -116,7 +116,7 @@ export function PeerInfoPopover({ row, children }: PeerInfoPopoverProps) {
                   ownDept.department_id,
                 ) as Route
               }
-              className="inline-flex items-center gap-1 rounded-md border border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-200 hover:bg-neutral-800"
+              className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
             >
               Department page
             </Link>
@@ -138,7 +138,7 @@ function Row({
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="mt-0.5 text-neutral-500" aria-hidden>
+      <span className="mt-0.5 text-muted-foreground" aria-hidden>
         {icon}
       </span>
       <span className="min-w-0">

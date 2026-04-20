@@ -4,9 +4,16 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Building2, Calendar, Loader2, Sparkles, Video } from "lucide-react";
 import Link from "next/link";
 
-import { appointmentsListOptions } from "@/entities/appointment";
+import {
+  appointmentsListOptions,
+  isTerminalStatus,
+} from "@/entities/appointment";
+import { CancelAppointmentDialog } from "@/features/patient-appointment-cancel";
+import { PatientEncounterCard } from "@/features/patient-encounter-view";
+import { PrescriptionsByAppointmentCard } from "@/features/patient-prescriptions-view";
 import { routes } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
+import { AppointmentStatusBadge } from "@/shared/ui/appointment-status-badge";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
@@ -168,38 +175,62 @@ export function PatientAppointmentsView({ embedded = false }: PatientAppointment
           </section>
 
           <ul className="grid gap-3 md:grid-cols-2">
-          {list.map((a) => (
-            <li
-              key={a.id}
-              className={cn(
-                "rounded-2xl border bg-card/90 p-4 shadow-sm transition hover:shadow-md",
-                !a.isEnabled && "opacity-60 saturate-50",
-              )}
-            >
-              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                <p className="text-base font-semibold">
-                  Dr. {a.doctorFirstName} {a.doctorLastName}
-                </p>
-                <div className="flex gap-2">
-                  <Badge variant={a.isOnSchedule ? "default" : "secondary"}>
-                    {a.isOnSchedule ? "Confirmed" : "Pending"}
-                  </Badge>
-                  <Badge variant="outline">{a.isOnline ? "Online" : "In person"}</Badge>
+          {list.map((a) => {
+            const terminal = isTerminalStatus(a.status);
+            return (
+              <li
+                key={a.id}
+                className={cn(
+                  "rounded-2xl border bg-card/90 p-4 shadow-sm transition hover:shadow-md",
+                  !a.isEnabled && "opacity-60 saturate-50",
+                  terminal && "opacity-80",
+                )}
+              >
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-base font-semibold">
+                    Dr. {a.doctorFirstName} {a.doctorLastName}
+                  </p>
+                  <div className="flex gap-2">
+                    <AppointmentStatusBadge
+                      status={a.status}
+                      detail={a.cancellationReason || undefined}
+                    />
+                    <Badge variant="outline">{a.isOnline ? "Online" : "In person"}</Badge>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-muted/40 space-y-1 rounded-xl border px-3 py-2 text-sm">
-                <p className="font-medium">{a.departmentName}</p>
-                <p className="text-muted-foreground">
-                  {formatDate(a.date)} at {formatTime(a.time)}
-                </p>
-              </div>
-              {a.isOnline && a.isOnSchedule ? (
-                <Button asChild size="sm" className="mt-3 w-full">
-                  <Link href={routes.patient.consultations}>Open video consultation</Link>
-                </Button>
-              ) : null}
-            </li>
-          ))}
+                <div className="bg-muted/40 space-y-1 rounded-xl border px-3 py-2 text-sm">
+                  <p className="font-medium">{a.departmentName}</p>
+                  <p className="text-muted-foreground">
+                    {formatDate(a.date)} at {formatTime(a.time)}
+                  </p>
+                  {a.cancellationReason ? (
+                    <p className="text-destructive text-xs">
+                      <span className="font-medium">Reason:</span> {a.cancellationReason}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {a.isOnline && a.status === "confirmed" ? (
+                    <Button asChild size="sm">
+                      <Link href={routes.patient.consultations}>Open video</Link>
+                    </Button>
+                  ) : null}
+                  {!terminal ? (
+                    <CancelAppointmentDialog appointmentId={a.id} />
+                  ) : null}
+                </div>
+                {a.status === "completed" ? (
+                  <div className="mt-4 grid gap-3">
+                    <PatientEncounterCard
+                      appointmentId={a.id}
+                      appointmentStatus={a.status}
+                    />
+                    <PrescriptionsByAppointmentCard appointmentId={a.id} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
           </ul>
         </>
       )}
