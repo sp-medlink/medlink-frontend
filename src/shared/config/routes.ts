@@ -29,6 +29,8 @@ export const routes = {
     /** Prescriptions & medical documents */
     documents: "/patient/documents",
     notifications: "/patient/notifications",
+    /** Plain user's entry point into the doctor-verification submission. */
+    becomeDoctor: "/patient/become-doctor",
   },
   doctor: {
     root: "/doctor",

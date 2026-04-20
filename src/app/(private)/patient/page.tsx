@@ -12,7 +12,11 @@ import {
   Video,
 } from "lucide-react";
 import { useCurrentUser } from "@/entities/session";
-import { appointmentsListOptions } from "@/entities/appointment";
+import {
+  appointmentsListOptions,
+  formatApptLocalDate,
+  formatApptLocalTime,
+} from "@/entities/appointment";
 import { fetchOrganizations } from "@/entities/doctor-directory";
 import { PatientAppointmentsView } from "@/features/patient-appointments/ui/patient-appointments-view";
 import { PatientConsultationsView } from "@/features/patient-consultations/ui/patient-consultations-view";
@@ -24,42 +28,6 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
-function formatDate(value: string): string {
-  const raw = value.trim();
-  const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const d = isoDateMatch
-    ? new Date(
-        Date.UTC(
-          Number(isoDateMatch[1]),
-          Number(isoDateMatch[2]) - 1,
-          Number(isoDateMatch[3]),
-        ),
-      )
-    : new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(d);
-}
-
-function formatTime(value: string): string {
-  const raw = value.trim();
-  const isoTimeMatch = raw.match(/T(\d{2}):(\d{2})(?::\d{2})?/);
-  if (isoTimeMatch) return `${isoTimeMatch[1]}:${isoTimeMatch[2]}`;
-
-  const plainTimeMatch = raw.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
-  if (plainTimeMatch) return `${plainTimeMatch[1]}:${plainTimeMatch[2]}`;
-
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
-  }).format(d);
-}
 
 export default function PatientHomePage() {
   const [homeTab, setHomeTab] = useState("appointments");
@@ -223,7 +191,8 @@ export default function PatientHomePage() {
                         Dr. {item.doctorFirstName} {item.doctorLastName}
                       </p>
                       <p className="text-muted-foreground text-xs">
-                        {item.departmentName} · {formatDate(item.date)} {formatTime(item.time)}
+                        {item.departmentName} · {formatApptLocalDate(item.date, item.time)}{" "}
+                        {formatApptLocalTime(item.date, item.time)}
                       </p>
                     </div>
                   ))
@@ -264,7 +233,7 @@ export default function PatientHomePage() {
                 <p className="text-muted-foreground text-xs">Next visit</p>
                 <p className="font-medium">
                   {nextVisit
-                    ? `${formatDate(nextVisit.date)} ${formatTime(nextVisit.time)}`
+                    ? `${formatApptLocalDate(nextVisit.date, nextVisit.time)} ${formatApptLocalTime(nextVisit.date, nextVisit.time)}`
                     : "Not booked"}
                 </p>
               </div>

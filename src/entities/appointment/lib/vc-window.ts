@@ -1,4 +1,5 @@
 import type { Appointment } from "../model/types";
+import { apptAsLocalDate } from "./time";
 
 /**
  * Matches the backend's `vcGracePeriod` in
@@ -28,18 +29,10 @@ export interface VcWindowInfo {
 }
 
 function parseStart(appt: Appointment): number | null {
-  const d = appt.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!d) return null;
-  const t = appt.time.match(/T(\d{2}):(\d{2})|^(\d{2}):(\d{2})/);
-  const hh = t ? Number(t[1] ?? t[3]) : 0;
-  const mm = t ? Number(t[2] ?? t[4]) : 0;
-  return new Date(
-    Number(d[1]),
-    Number(d[2]) - 1,
-    Number(d[3]),
-    hh,
-    mm,
-  ).getTime();
+  // Backend stores appt date/time in UTC; go through the shared
+  // UTC→local combiner so the VC window lines up with wall-clock now.
+  const dt = apptAsLocalDate(appt);
+  return dt === null ? null : dt.getTime();
 }
 
 export function computeVcWindow(

@@ -30,6 +30,14 @@ export {
 export type { AvailableSlotsDay } from "./api/available-slots.api";
 export { formatVCJoinError } from "./lib/vc-error";
 export {
+  combineUtcDateAndTime,
+  apptAsLocalDate,
+  formatApptLocalTime,
+  formatApptLocalDate,
+  isApptInPast,
+  isApptToday,
+} from "./lib/time";
+export {
   computeVcWindow,
   formatVcWindowHint,
   VC_GRACE_MINUTES,

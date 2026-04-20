@@ -6,6 +6,8 @@ import Link from "next/link";
 
 import {
   appointmentsListOptions,
+  formatApptLocalDate,
+  formatApptLocalTime,
   isTerminalStatus,
 } from "@/entities/appointment";
 import { CancelAppointmentDialog } from "@/features/patient-appointment-cancel";
@@ -28,43 +30,6 @@ interface PatientAppointmentsViewProps {
   embedded?: boolean;
 }
 
-function formatDate(value: string): string {
-  const raw = value.trim();
-  const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const d = isoDateMatch
-    ? new Date(
-        Date.UTC(
-          Number(isoDateMatch[1]),
-          Number(isoDateMatch[2]) - 1,
-          Number(isoDateMatch[3]),
-        ),
-      )
-    : new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(d);
-}
-
-function formatTime(value: string): string {
-  const raw = value.trim();
-  const isoTimeMatch = raw.match(/T(\d{2}):(\d{2})(?::\d{2})?/);
-  if (isoTimeMatch) return `${isoTimeMatch[1]}:${isoTimeMatch[2]}`;
-
-  const plainTimeMatch = raw.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
-  if (plainTimeMatch) return `${plainTimeMatch[1]}:${plainTimeMatch[2]}`;
-
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
-  }).format(d);
-}
 
 export function PatientAppointmentsView({ embedded = false }: PatientAppointmentsViewProps) {
   const q = useQuery(appointmentsListOptions());
@@ -201,7 +166,7 @@ export function PatientAppointmentsView({ embedded = false }: PatientAppointment
                 <div className="bg-muted/40 space-y-1 rounded-xl border px-3 py-2 text-sm">
                   <p className="font-medium">{a.departmentName}</p>
                   <p className="text-muted-foreground">
-                    {formatDate(a.date)} at {formatTime(a.time)}
+                    {formatApptLocalDate(a.date, a.time)} at {formatApptLocalTime(a.date, a.time)}
                   </p>
                   {a.cancellationReason ? (
                     <p className="text-destructive text-xs">

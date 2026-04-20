@@ -7,14 +7,18 @@ import { toast } from "sonner";
 
 import {
   appointmentKeys,
+  apptAsLocalDate,
   computeVcWindow,
   fetchDoctorAppointments,
   fetchVideoCallTokenForDoctorAppointment,
+  formatApptLocalDate,
+  formatApptLocalTime,
   formatVCJoinError,
   formatVcWindowHint,
   isTerminalStatus,
   setDoctorAppointmentOnSchedule,
 } from "@/entities/appointment";
+import type { Appointment } from "@/entities/appointment";
 import { myDoctorDepartmentsOptions, myDoctorProfileOptions } from "@/entities/doctor";
 import { LifecycleControls } from "@/features/doctor-appointment-lifecycle";
 import { EncounterEditor } from "@/features/doctor-encounter-edit";
@@ -34,42 +38,19 @@ interface DoctorAppointmentsViewProps {
   embedded?: boolean;
 }
 
-function formatDate(value: string): string {
-  const raw = value.trim();
-  const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const d = isoDateMatch
-    ? new Date(
-        Date.UTC(
-          Number(isoDateMatch[1]),
-          Number(isoDateMatch[2]) - 1,
-          Number(isoDateMatch[3]),
-        ),
-      )
-    : new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(d);
-}
-
 /**
- * "Past" means the appointment's calendar date is strictly before today.
- * Today's appointments stay in "Upcoming" even if the clock time has
- * already slipped past — the doctor still needs to resolve them.
+ * "Past" means the appointment's local calendar day is strictly before
+ * today. Today's appointments stay in "Upcoming" even if the clock
+ * time has already slipped past — the doctor still needs to resolve
+ * them. Computed after UTC→local conversion so midnight-adjacent
+ * appts don't land on the wrong side.
  */
-function isApptPast(dateStr: string): boolean {
-  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return false;
-  const target = new Date(
-    Number(m[1]),
-    Number(m[2]) - 1,
-    Number(m[3]),
-  ).getTime();
+function isApptPast(appt: Appointment): boolean {
+  const dt = apptAsLocalDate(appt);
+  if (!dt) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return target < today.getTime();
+  return dt.getTime() < today.getTime();
 }
 
 function patientDisplayName(first: string, last: string): string {
@@ -84,23 +65,6 @@ function patientInitials(first: string, last: string): string {
   return initials || "?";
 }
 
-function formatTime(value: string): string {
-  const raw = value.trim();
-  const isoTimeMatch = raw.match(/T(\d{2}):(\d{2})(?::\d{2})?/);
-  if (isoTimeMatch) return `${isoTimeMatch[1]}:${isoTimeMatch[2]}`;
-
-  const plainTimeMatch = raw.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
-  if (plainTimeMatch) return `${plainTimeMatch[1]}:${plainTimeMatch[2]}`;
-
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
-  }).format(d);
-}
 
 export function DoctorAppointmentsView({ embedded = false }: DoctorAppointmentsViewProps) {
   const qc = useQueryClient();
@@ -156,8 +120,8 @@ export function DoctorAppointmentsView({ embedded = false }: DoctorAppointmentsV
   const onlineCount = deptAppointments.filter((a) => a.isOnline).length;
   const onScheduleCount = deptAppointments.filter((a) => a.isOnSchedule).length;
 
-  const upcomingAppts = deptAppointments.filter((a) => !isApptPast(a.date));
-  const pastAppts = deptAppointments.filter((a) => isApptPast(a.date));
+  const upcomingAppts = deptAppointments.filter((a) => !isApptPast(a));
+  const pastAppts = deptAppointments.filter((a) => isApptPast(a));
 
   type Appt = (typeof deptAppointments)[number];
 
@@ -181,7 +145,9 @@ export function DoctorAppointmentsView({ embedded = false }: DoctorAppointmentsV
     const showUtilityRow = showScheduleToggle || showVideo;
     const vcWindow = showVideo ? computeVcWindow(a) : null;
     const vcHint = vcWindow ? formatVcWindowHint(vcWindow) : "";
-    const vcCanJoin = vcWindow?.phase === "open";
+    // TEMP-VC-WINDOW-OFF: always allow join while we debug the demo.
+    // Revert with: `const vcCanJoin = vcWindow?.phase === "open";`
+    const vcCanJoin = showVideo;
     return (
       <li
         key={a.id}
@@ -213,11 +179,11 @@ export function DoctorAppointmentsView({ embedded = false }: DoctorAppointmentsV
               <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <CalendarDays className="size-3.5" aria-hidden />
-                  {formatDate(a.date)}
+                  {formatApptLocalDate(a.date, a.time)}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Clock3 className="size-3.5" aria-hidden />
-                  {formatTime(a.time)}
+                  {formatApptLocalTime(a.date, a.time)}
                 </span>
               </p>
             </div>

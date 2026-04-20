@@ -68,8 +68,18 @@ export function SlotPicker({
 
   const [activeDate, setActiveDate] = useState<string | null>(null);
   const resolvedActiveDate = resolveActiveDate(activeDate, selected, days, byDate);
-  const activeTimes = resolvedActiveDate
+  const rawActiveTimes = resolvedActiveDate
     ? byDate.get(resolvedActiveDate) ?? []
+    : [];
+  // Backend returns slot times as UTC (`HH:MM:SS`). Strip anything whose
+  // wall-clock moment is already in the past so the user can't pick a
+  // slot the backend will reject.
+  const nowMs = Date.now();
+  const activeTimes = resolvedActiveDate
+    ? rawActiveTimes.filter((t) => {
+        const dt = combineUtc(resolvedActiveDate, t);
+        return dt !== null && dt.getTime() > nowMs;
+      })
     : [];
 
   const isAtToday = anchor === todayIso();
@@ -162,6 +172,8 @@ export function SlotPicker({
               const isSelected =
                 selected?.date === resolvedActiveDate &&
                 selected?.time === t;
+              // Backend time is the source of truth — display raw `HH:MM`.
+              const label = t.slice(0, 5);
               return (
                 <button
                   key={t}
@@ -177,7 +189,7 @@ export function SlotPicker({
                   )}
                 >
                   <Clock className="size-3.5 opacity-70" aria-hidden />
-                  {t.slice(0, 5)}
+                  {label}
                 </button>
               );
             })}
@@ -189,6 +201,25 @@ export function SlotPicker({
 }
 
 /* ---------- local helpers (pure, no state) -------------------------- */
+
+/**
+ * Parse backend `YYYY-MM-DD` + `HH:MM[:SS]` as naive wall-clock — no
+ * TZ conversion. Used only to compare against `Date.now()` for the
+ * past-slot filter.
+ */
+function combineUtc(dateIso: string, time: string): Date | null {
+  const d = dateIso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const t = time.match(/^(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!d || !t) return null;
+  return new Date(
+    Number(d[1]),
+    Number(d[2]) - 1,
+    Number(d[3]),
+    Number(t[1]),
+    Number(t[2]),
+    Number(t[3] ?? 0),
+  );
+}
 
 function todayIso(): string {
   const d = new Date();

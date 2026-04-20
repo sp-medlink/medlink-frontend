@@ -1,7 +1,11 @@
 export type { Doctor, DoctorDepartment, VerificationStatus } from "./model/types";
 export { doctorDepartmentKeys } from "./api/doctor-department.keys";
 export { doctorProfileKeys } from "./api/doctor.keys";
-export { fetchMyDoctorProfile } from "./api/doctor.api";
+export {
+  fetchMyDoctorProfile,
+  submitMyDoctorProfile,
+  type SubmitDoctorProfileBody,
+} from "./api/doctor.api";
 export { myDoctorProfileOptions } from "./api/doctor.queries";
 export {
   fetchDoctorDepartmentsByOrgDept,

@@ -11,6 +11,7 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  Stethoscope,
   UserCog,
   Users,
   Video,
@@ -129,6 +130,17 @@ export function getNavItems(area: SidebarArea, opts: NavOptions = {}): NavItem[]
         },
       ];
       if (isAnyAdmin) items.push(adminLink);
+      // Plain patient-only users can apply to become a doctor — entry
+      // point for the verification form. Disappears the moment they
+      // pick up the `doctor` role (pending or approved), at which
+      // point they see the doctor sidebar instead.
+      if (opts.appRole === "patient") {
+        items.push({
+          href: routes.patient.becomeDoctor,
+          label: "Become a doctor",
+          icon: Stethoscope,
+        });
+      }
       items.push({
         href: routes.settings,
         label: "Profile & settings",

@@ -24,7 +24,11 @@ import {
 } from "@/entities/doctor";
 import {
   appointmentKeys,
+  apptAsLocalDate,
   fetchDoctorAppointments,
+  formatApptLocalDate,
+  formatApptLocalTime,
+  isApptToday,
   isTerminalStatus,
 } from "@/entities/appointment";
 import type { Appointment } from "@/entities/appointment";
@@ -41,47 +45,6 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 
-function parseApptDateTime(a: Appointment): Date | null {
-  const d = a.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!d) return null;
-  const t = a.time.match(/T(\d{2}):(\d{2})|^(\d{2}):(\d{2})/);
-  const hours = t ? Number(t[1] ?? t[3]) : 0;
-  const minutes = t ? Number(t[2] ?? t[4]) : 0;
-  return new Date(
-    Number(d[1]),
-    Number(d[2]) - 1,
-    Number(d[3]),
-    hours,
-    minutes,
-  );
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function formatApptDate(a: Appointment): string {
-  const d = parseApptDateTime(a);
-  if (!d) return a.date;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(d);
-}
-
-function formatApptTime(a: Appointment): string {
-  const d = parseApptDateTime(a);
-  if (!d) return a.time;
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(d);
-}
 
 function patientName(a: Appointment): string {
   const name = `${a.patientFirstName} ${a.patientLastName}`.trim();
@@ -100,8 +63,10 @@ export default function DoctorHomePage() {
   const isDoctor = !!user?.roles.includes("doctor");
 
   useEffect(() => {
+    // Plain users landing on /doctor get bounced to the patient-area
+    // application page — keeps onboarding inside their own surface.
     if (user && !isDoctor) {
-      router.replace(`${routes.doctor.practice}#verification`);
+      router.replace(routes.patient.becomeDoctor);
     }
   }, [user, isDoctor, router]);
 
@@ -157,28 +122,25 @@ export default function DoctorHomePage() {
   if (!user || !isDoctor) return null;
 
   const allAppts = appointments.data ?? [];
-  const now = new Date();
+  const nowMs = Date.now();
   const activeAppts = allAppts.filter(
     (a) => !isTerminalStatus(a.status) && a.isEnabled,
   );
   const todayAppts = activeAppts
-    .filter((a) => {
-      const d = parseApptDateTime(a);
-      return d && isSameDay(d, now);
-    })
+    .filter((a) => isApptToday(a, nowMs))
     .sort((a, b) => {
-      const da = parseApptDateTime(a)?.getTime() ?? 0;
-      const db = parseApptDateTime(b)?.getTime() ?? 0;
+      const da = apptAsLocalDate(a)?.getTime() ?? 0;
+      const db = apptAsLocalDate(b)?.getTime() ?? 0;
       return da - db;
     });
   const upcomingAppts = activeAppts
     .filter((a) => {
-      const d = parseApptDateTime(a);
-      return d && !isSameDay(d, now) && d.getTime() > now.getTime();
+      const d = apptAsLocalDate(a);
+      return d !== null && !isApptToday(a, nowMs) && d.getTime() > nowMs;
     })
     .sort((a, b) => {
-      const da = parseApptDateTime(a)?.getTime() ?? 0;
-      const db = parseApptDateTime(b)?.getTime() ?? 0;
+      const da = apptAsLocalDate(a)?.getTime() ?? 0;
+      const db = apptAsLocalDate(b)?.getTime() ?? 0;
       return da - db;
     })
     .slice(0, 5);
@@ -496,19 +458,19 @@ function ApptRow({ a, showDate = false }: { a: Appointment; showDate?: boolean }
             {showDate ? (
               <>
                 <CalendarDays className="size-3" aria-hidden />
-                {formatApptDate(a)}
+                {formatApptLocalDate(a.date, a.time)}
               </>
             ) : (
               <>
                 <Clock3 className="size-3" aria-hidden />
-                {formatApptTime(a)}
+                {formatApptLocalTime(a.date, a.time)}
               </>
             )}
           </span>
           {showDate ? (
             <span className="inline-flex items-center gap-1">
               <Clock3 className="size-3" aria-hidden />
-              {formatApptTime(a)}
+              {formatApptLocalTime(a.date, a.time)}
             </span>
           ) : null}
           {a.isOnline ? (

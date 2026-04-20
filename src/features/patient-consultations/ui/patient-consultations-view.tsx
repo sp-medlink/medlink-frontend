@@ -16,6 +16,8 @@ import {
   appointmentsListOptions,
   computeVcWindow,
   fetchVideoCallTokenForAppointment,
+  formatApptLocalDate,
+  formatApptLocalTime,
   formatVCJoinError,
   formatVcWindowHint,
 } from "@/entities/appointment";
@@ -37,43 +39,6 @@ interface PatientConsultationsViewProps {
   embedded?: boolean;
 }
 
-function formatDate(value: string): string {
-  const raw = value.trim();
-  const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const d = isoDateMatch
-    ? new Date(
-        Date.UTC(
-          Number(isoDateMatch[1]),
-          Number(isoDateMatch[2]) - 1,
-          Number(isoDateMatch[3]),
-        ),
-      )
-    : new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(d);
-}
-
-function formatTime(value: string): string {
-  const raw = value.trim();
-  const isoTimeMatch = raw.match(/T(\d{2}):(\d{2})(?::\d{2})?/);
-  if (isoTimeMatch) return `${isoTimeMatch[1]}:${isoTimeMatch[2]}`;
-
-  const plainTimeMatch = raw.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
-  if (plainTimeMatch) return `${plainTimeMatch[1]}:${plainTimeMatch[2]}`;
-
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
-  }).format(d);
-}
 
 export function PatientConsultationsView({ embedded = false }: PatientConsultationsViewProps) {
   const qc = useQueryClient();
@@ -197,7 +162,9 @@ export function PatientConsultationsView({ embedded = false }: PatientConsultati
         <ul className="space-y-3">
           {online.map((a) => {
             const vc = computeVcWindow(a);
-            const canJoin = vc.phase === "open";
+            // TEMP-VC-WINDOW-OFF: always allow join while we debug the demo.
+            // Revert with: `const canJoin = vc.phase === "open";`
+            const canJoin = true;
             const hint = formatVcWindowHint(vc);
             return (
               <li key={a.id}>
@@ -207,7 +174,8 @@ export function PatientConsultationsView({ embedded = false }: PatientConsultati
                       Dr. {a.doctorFirstName} {a.doctorLastName}
                     </CardTitle>
                     <CardDescription>
-                      {formatDate(a.date)} · {formatTime(a.time)} ·{" "}
+                      {formatApptLocalDate(a.date, a.time)} ·{" "}
+                      {formatApptLocalTime(a.date, a.time)} ·{" "}
                       {a.departmentName}
                     </CardDescription>
                   </CardHeader>

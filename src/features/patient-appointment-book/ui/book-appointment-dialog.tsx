@@ -4,6 +4,10 @@ import { useState, type ReactNode } from "react";
 import { CalendarPlus, Clock3, Loader2, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  formatApptLocalDate,
+  formatApptLocalTime,
+} from "@/entities/appointment";
 import { SlotPicker } from "@/features/appointment-slot-picker";
 import { ApiError } from "@/shared/api";
 import { cn } from "@/shared/lib/utils";
@@ -31,23 +35,6 @@ interface BookAppointmentDialogProps {
 }
 
 type Mode = "in_person" | "online";
-
-function formatTimeHHMM(time: string): string {
-  const m = time.match(/^(\d{2}):(\d{2})/);
-  if (!m) return time;
-  return `${m[1]}:${m[2]}`;
-}
-
-function formatDateForHeader(iso: string): string {
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return iso;
-  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(d);
-}
 
 /**
  * Book-an-appointment dialog. Mounts a SlotPicker + a mode toggle and
@@ -161,11 +148,11 @@ export function BookAppointmentDialog({
             {selected ? (
               <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span className="font-medium">
-                  {formatDateForHeader(selected.date)}
+                  {formatApptLocalDate(selected.date, selected.time)}
                 </span>
                 <span className="text-muted-foreground inline-flex items-center gap-1">
                   <Clock3 className="size-3.5" aria-hidden />
-                  {formatTimeHHMM(selected.time)}
+                  {formatApptLocalTime(selected.date, selected.time)}
                 </span>
                 <span className="text-muted-foreground">·</span>
                 <span className="text-muted-foreground">
